@@ -1,13 +1,29 @@
 import React from 'react';
-import { StyleSheet, View, SafeAreaView, ScrollView, Dimensions } from 'react-native';
-import {createDrawerNavigator, DrawerItems, createStackNavigator} from 'react-navigation';
-import HomeScreen from './screens/HomeScreen';
-import SettingsScreen from './screens/SettingsScreen';
 import { Header, Left, Right, Icon, Container, Button, Body, Title, Text } from 'native-base';
 import { Font, AppLoading } from "expo";
+import { bindActionCreators } from 'redux';
+import { Provider, connect } from 'react-redux';
+import store from './store';
+import * as Actions from './actions/actions';
+import AppStackNavigator from './navigators/AppStackNavigator';
 
+const mapStateToProps = (state) => {
+  return state.nav;
+}
 
-export default class App extends React.Component {
+const mapDispatchToProps = (dispatch) => {
+  return bindActionCreators(Actions, dispatch)
+}
+
+export default App = () => {
+  return (
+    <Provider store={store}>
+      <AppMain />
+    </Provider>
+  );
+}
+
+class Main extends React.Component {
   state = {
     fontLoaded: false,
   }
@@ -21,54 +37,17 @@ export default class App extends React.Component {
   }
 
   render() {
+    const props = this.props;
       return (
         <Container>
         {
           this.state.fontLoaded ? (
-          <AppDrawerNavigator />
+              <AppStackNavigator />
             ) : <AppLoading />
         }
         </Container>
       );
   }
 }
+const AppMain =  connect(mapStateToProps, mapDispatchToProps)(Main);
 
-export class Test extends React.Component {
-  render() {
-    return (
-      <Text>Test</Text>
-    );
-  }
-}
-
-const CustomDrawerComponent = (props) => (
-  <SafeAreaView style={{flex:1}}>
-    <View style={{height: 150, backgroundColor: 'white', alignItems:'center', justifyContent: 'center',}}>
-      <Text>CustomedHeader</Text>
-    </View>
-    <ScrollView>
-      <DrawerItems {...props} />
-    </ScrollView>
-  </SafeAreaView>
-)
-
-const stack = createStackNavigator({
-  Home: HomeScreen,
-  Test: Test,
-})
-
-const AppDrawerNavigator = createDrawerNavigator({
-  Home: stack,
-  Settings: SettingsScreen,
-}, {
-  contentComponent: CustomDrawerComponent,
-})
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-});
