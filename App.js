@@ -3,9 +3,10 @@ import { Header, Left, Right, Icon, Container, Button, Body, Title, Text } from 
 import { Font, AppLoading } from "expo";
 import { bindActionCreators } from 'redux';
 import { Provider, connect } from 'react-redux';
-import store from './store';
+import store, {persistor} from './store';
 import * as Actions from './actions/actions';
 import AppStackNavigator from './navigators/AppStackNavigator';
+import { PersistGate } from 'redux-persist/integration/react'
 
 const mapStateToProps = (state) => {
   return state.nav;
@@ -18,7 +19,9 @@ const mapDispatchToProps = (dispatch) => {
 export default App = () => {
   return (
     <Provider store={store}>
-      <AppMain />
+      <PersistGate loading={null} persistor={persistor}>
+        <AppMain />
+      </PersistGate>
     </Provider>
   );
 }

@@ -7,10 +7,3 @@ export const savePassword = (bool) => {
         bool
     }
 }
-
-export const test = (text) => {
-    return {
-        type: 'TEST_TEST',
-        text
-    }
-}
