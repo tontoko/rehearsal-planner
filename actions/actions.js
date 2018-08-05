@@ -1,9 +1,7 @@
-export const SAVE_PASSWORD = "SAVE_PASSWORD";
-export const TEST_TEST = "TEST_TEST";
+export const IF_SAVE_PASSWORD = "IF_SAVE_PASSWORD";
 
-export const savePassword = (bool) => {
+export const savePassword = () => {
     return {
-        type: 'SAVE_PASSWORD',
-        bool
+        type: 'IF_SAVE_PASSWORD',
     }
 }

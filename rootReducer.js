@@ -1,10 +1,10 @@
 
 import {combineReducers} from  'redux';
-import {savePassword} from './reducers/savePassword';
+import {ifSavePassword} from './reducers/ifSavePassword';
 import navReducer from './reducers/navReducer'
 
 const reducers = combineReducers({
-    savePassword: savePassword,
+    ifSavePassword: ifSavePassword,
     nav: navReducer,
 })
 
