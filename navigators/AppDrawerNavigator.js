@@ -1,6 +1,8 @@
 import HomeStackNavigator from "./HomeStackNavigator";
 import { createDrawerNavigator, DrawerItems, createStackNavigator } from 'react-navigation';
 import SettingsScreen from '../screens/SettingsScreen';
+import React from 'react';
+import {SafeAreaView, View, ScrollView, Text} from 'react-native';
 
 const CustomDrawerComponent = (props) => (
     <SafeAreaView style={{ flex: 1 }}>

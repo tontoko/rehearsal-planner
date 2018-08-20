@@ -3,8 +3,8 @@ import LoginScreen from '../screens/LoginScreen';
 import { createDrawerNavigator, DrawerItems, createStackNavigator } from 'react-navigation';
 
 export default AppStackNavigator = createStackNavigator({
-    login: LoginScreen,
     drawer: AppDrawerNavigator,
+    login: LoginScreen,
 }, {
     navigationOptions: {
         header: null,
