@@ -27,7 +27,7 @@ class ScheduleCreateScreen extends React.Component {
     }
 
     createNewSchedule = () => {
-        if (this.state.title && this.state.location && this.state.participants && this.state.date) {
+        if (this.state.title && this.state.location && this.state.participants.length !== 0 && this.state.date) {
             this.props.createSchedule({
                 title: this.state.title,
                 location: this.state.location,
