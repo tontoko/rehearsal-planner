@@ -1,4 +1,6 @@
 import React from 'react';
+import { BackHandler } from "react-native";
+import { NavigationActions } from "react-navigation";
 import { Header, Left, Right, Icon, Container, Button, Body, Title, Text } from 'native-base';
 import { Font, AppLoading } from "expo";
 import { bindActionCreators } from 'redux';
@@ -68,11 +70,23 @@ class Main extends React.Component {
         this.props.logIn(user);
       }
     });
+    BackHandler.addEventListener("hardwareBackPress", this.onBackPress);
   }
 
   componentWillUnmount() {
     this.authSubscription();
+    BackHandler.removeEventListener("hardwareBackPress", this.onBackPress);
   }
+
+  onBackPress = () => {
+    const { dispatch, nav } = this.props;
+    if (nav.index === 0) {
+      return false;
+    }
+
+    dispatch(NavigationActions.back());
+    return true;
+  };
 
   render() {
     if (this.state.fontLoaded && !this.state.loading) {

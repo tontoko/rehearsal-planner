@@ -3,7 +3,7 @@ import { View, ListItem, Content, Form, Header, Left, Right, Icon, Container, Bu
 import { connect } from 'react-redux';
 import * as Actions from '../actions/actions';
 import { bindActionCreators } from 'redux';
-import { StatusBar } from 'react-native';
+import { StatusBar, Dimensions } from 'react-native';
 import * as firebase from 'firebase';
 
 class LoginScreen extends React.Component {
@@ -12,43 +12,67 @@ class LoginScreen extends React.Component {
 		this.state = {
 			email: '',
 			password: '',
+			width: Dimensions.get('window').width,
+			height: Dimensions.get('window').height,
 		};
+		this.onLayout = this.onLayout.bind(this);
+	}
+
+	componentWillMount() {
+		if (this.props.ifSaveEmail.saved) {
+			this.setState({email: this.props.ifSaveEmail.email});
+		}
 	}
 
 	login() {
 		const email = this.state.email;
 		const password = this.state.password;
+		if (this.props.ifSaveEmail.saved) {
+			this.props.saveEmail(email);
+		} else{
+			this.props.saveEmail('');
+		}
 		if (email && password) {
 			firebase.auth().signInWithEmailAndPassword(email, password)
 				.catch((error) => {
-					const errorCode = error.code;
 					const errorMessage = error.message;
-					alert('code: ' + errorCode + "<br>" + errorMessage);
+					alert(errorMessage);
 				});
 		} else {
 			alert('ユーザー名とパスワードを入力してください');
 		}
 	}
+	onLayout() {
+		// 端末回転時
+		this.setState({
+			width: Dimensions.get('window').width,
+			height: Dimensions.get('window').height,
+		});
+	}
 
 	render() {
 		return (
-			<Container style={{ paddingTop: StatusBar.currentHeight ? StatusBar.currentHeight : 0 }}>
+			<Container onLayout={this.onLayout} style={{ paddingTop: StatusBar.currentHeight ? StatusBar.currentHeight : 0, }}>
 				<Header>
 					<Title style={{ alignSelf: 'center' }}>ログイン</Title>
 				</Header>
-				<Form style={{ flex: 1, justifyContent: 'space-around', marginVertical: '20%', marginHorizontal: '10%' }}>
+				<Form style={{
+					flex: 1, justifyContent: 'space-around',
+					marginVertical: this.state.height>=this.state.width ? this.state.height / 5 : 0, 
+					marginHorizontal: this.state.width / 10 
+				}}>
 					<Item floatingLabel>
 						<Label>メールアドレス</Label>
-						<Input autoCapitalize='none' value={this.state.email} onChangeText={(text) => this.setState({email: text})}></Input>
+						<Input autoCapitalize='none' value={this.state.email} onChangeText={(text) => this.setState({ email: text })}></Input>
 					</Item>
 					<Item floatingLabel>
 						<Label>パスワード</Label>
 						<Input secureTextEntry value={this.state.password} onChangeText={(text) => this.setState({ password: text })}></Input>
 					</Item>
 					<ListItem style={{}}>
-						<CheckBox checked={this.props.ifSavePassword.saved} onPress={() => { this.props.savePassword(); }} />
+						<CheckBox checked={this.props.ifSaveEmail.saved} onPress={() => { this.props.togleSaveEmail(); }} />
 						<Body>
-							<Text style={{ fontSize: 14, color: 'gray' }}>パスワードを記憶</Text>
+							<Text style={{ fontSize: 14, color: 'gray' }}>メールアドレスを記憶</Text>
 						</Body>
 					</ListItem>
 					<Button style={{ alignSelf: 'flex-end', }} onPress={() => this.login()}><Text>ログイン</Text></Button>

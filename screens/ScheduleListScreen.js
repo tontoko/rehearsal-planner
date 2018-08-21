@@ -36,7 +36,7 @@ class ScheduleListScreen extends React.Component {
 							renderRow={data =>
 								<ListItem onPress={() => this.props.navigation.navigate('ScheduleEditScreen', {id: data.id,})}>
 									<Body>
-										<Text>{data.id}</Text>
+										<Text>{data.title}</Text>
 										<Text note>{data.location}</Text>
 									</Body>
 									<Right>
@@ -44,7 +44,7 @@ class ScheduleListScreen extends React.Component {
 									</Right>              
 								</ListItem>}
 							renderLeftHiddenRow={data =>
-								<Button full onPress={() => alert(data.title)}>
+								<Button full onPress={() => alert(data.participants[0].name)}>
 									<Icon active name="information-circle" />
 								</Button>}
 							renderRightHiddenRow={(data, secId, rowId, rowMap) =>

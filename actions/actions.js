@@ -1,8 +1,14 @@
-export const IF_SAVE_PASSWORD = 'IF_SAVE_PASSWORD';
 
-export const savePassword = () => {
+export const togleSaveEmail = () => {
 	return {
-		type: 'IF_SAVE_PASSWORD',
+		type: 'TOGLE_SAVE_EMAIL',
+	};
+}; 
+
+export const saveEmail = (email) => {
+	return {
+		type: 'SAVE_EMAIL',
+		email
 	};
 };
 
