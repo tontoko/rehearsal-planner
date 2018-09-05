@@ -64,23 +64,22 @@ class LoginScreen extends React.Component {
 	}
 
 	async googleLogin() {
-		try {
-			const result = await Expo.Google.logInAsync({
-				androidClientId: '460431429680-tpbn5maqhjhbgb8dhrnad6l4uig460mq.apps.googleusercontent.com',
-				iosClientId: '460431429680-iacbej0tutia28puftcvqgos3pv1go2h.apps.googleusercontent.com',
-				scopes: ['profile', 'email'],
-			});
+		const result = await Expo.Google.logInAsync({
+			androidClientId: '460431429680-tpbn5maqhjhbgb8dhrnad6l4uig460mq.apps.googleusercontent.com',
+			iosClientId: '460431429680-iacbej0tutia28puftcvqgos3pv1go2h.apps.googleusercontent.com',
+			scopes: ['profile', 'email'],
+		});
 
-			if (result.type === 'success') {
-				const credential = firebase.auth.GoogleAuthProvider.credential(token);
+		if (result.type === 'success') {
+			// const credential = firebase.auth.GoogleAuthProvider.credential(result.accessToken);
 
-				await firebase.auth().signInAndRetrieveDataWithCredential(credential)
-					.catch(() => {
-						alert('エラーが発生しました');
-					});
-			}
-		} catch (e) {
-			return { error: true };
+			const credential = firebase.auth.GoogleAuthProvider.credential(result);
+
+			await firebase.auth().signInAndRetrieveDataWithCredential(credential)
+				.catch((e) => {
+					// alert('エラーが発生しました');
+					alert(e);
+				});
 		}
 	}
 
