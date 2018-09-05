@@ -86,7 +86,7 @@ class ScheduleCreateScreen extends React.Component {
                                 onDateChange={(date) => { this.setState({ date: date }) }}
                             />
                             <List style={{marginTop: '10%'}}>
-                                <ListItem itemHeader first>
+                                <ListItem itemHeader>
                                     <Text>参加者</Text>
                                 <Text>{this.state.participants[0] ? this.state.participants[0].name : ''}</Text>
                                 </ListItem>
@@ -94,30 +94,18 @@ class ScheduleCreateScreen extends React.Component {
                                     <Body>
                                         <Text>なんとかさん1</Text>
                                     </Body>
-                                <CheckBox 
-                                    onPress={() => {
-                                        if (!this.ifChecked(id)) {
-                                            const added = [...this.state.participants, {id, name}];
-                                            this.setState({ participants: added});
-                                        } else {
-                                            const deleted = this.state.participants.filter(n => n.id !== id);
-                                            this.setState({ participants: deleted});
-                                        }
-                                    }} 
-                                    checked={this.ifChecked(id)} 
-                                />
-                                </ListItem>
-                                <ListItem>
-                                    <Body>
-                                        <Text>ダミー</Text>
-                                    </Body>
-                                    <CheckBox />
-                                </ListItem>
-                                <ListItem>
-                                    <Body>
-                                        <Text>ダミー</Text>
-                                    </Body>
-                                    <CheckBox />
+                                    <CheckBox 
+                                        onPress={() => {
+                                            if (!this.ifChecked(id)) {
+                                                const added = [...this.state.participants, {id, name}];
+                                                this.setState({ participants: added});
+                                            } else {
+                                                const deleted = this.state.participants.filter(n => n.id !== id);
+                                                this.setState({ participants: deleted});
+                                            }
+                                        }} 
+                                        checked={this.ifChecked(id)} 
+                                    />
                                 </ListItem>
                             </List>
                         </Form>

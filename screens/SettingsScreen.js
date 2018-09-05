@@ -9,6 +9,7 @@ import { bindActionCreators } from 'redux';
 
 class Screen extends React.Component {
 	render() {
+		console.log(this.props.user.user);
 		return (
 			<View style={styles.container}>
 				<Button onPress={() => 
@@ -39,4 +40,4 @@ const mapDispatchToProps = (dispatch) => {
 	return bindActionCreators(Actions, dispatch);
 };
 
-export default SettingsScreen = connect(mapStateToProps, mapDispatchToProps)(Screen);
+export default connect(mapStateToProps, mapDispatchToProps)(Screen);

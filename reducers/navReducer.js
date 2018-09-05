@@ -1,4 +1,4 @@
 import {createNavigationReducer} from 'react-navigation-redux-helpers';
-import AppStackNavigator from '../navigators/AppStackNavigator'
+import AppDrawerNavigator from '../navigators/AppDrawerNavigator';
 
-export default navReducer = createNavigationReducer(AppStackNavigator);
+export default navReducer = createNavigationReducer(AppDrawerNavigator);
