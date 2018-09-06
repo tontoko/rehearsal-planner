@@ -7,14 +7,16 @@ import { Provider, connect } from 'react-redux';
 import store, {persistor} from './store';
 import * as Actions from './actions/actions';
 import { PersistGate } from 'redux-persist/integration/react';
-import * as firebase from 'firebase';
+import firebase from 'firebase';
 import moment from 'moment';
 import 'moment/locale/ja';
 import ENV from './env.json';
 import AppDrawerNavigator from './navigators/AppDrawerNavigator';
 import LoginStackNavigator from './navigators/LoginStackNavigator'; 
 import DisplayNameSettingScreen from './screens/DisplayNameSettingScreen';
+import LoadingScreen from './screens/LoadingScreen';
 moment.locale('ja');
+require("firebase/firestore");
 
 const config = {
   apiKey: ENV.FIREBASE_API_KEY,
@@ -55,12 +57,7 @@ class Main extends React.Component {
   }
 
   async componentWillMount() {
-    await Font.loadAsync({
-      Roboto: require("native-base/Fonts/Roboto.ttf"),
-      Roboto_medium: require("native-base/Fonts/Roboto_medium.ttf")
-    });
-    this.setState({ fontLoaded: true });
-
+    BackHandler.addEventListener("hardwareBackPress", this.onBackPress);
     this.authSubscription = firebase.auth().onAuthStateChanged((user) => {
       this.setState({
         loading: false,
@@ -71,7 +68,11 @@ class Main extends React.Component {
         this.props.logOut(user);
       }
     });
-    BackHandler.addEventListener("hardwareBackPress", this.onBackPress);
+    await Font.loadAsync({
+      Roboto: require("native-base/Fonts/Roboto.ttf"),
+      Roboto_medium: require("native-base/Fonts/Roboto_medium.ttf")
+    });
+    this.setState({ fontLoaded: true });
   }
 
   componentWillUnmount() {
@@ -103,7 +104,7 @@ class Main extends React.Component {
         return <LoginStackNavigator />
       }
     } else {
-      return <AppLoading />
+      return <LoadingScreen />
     }
   }
 }

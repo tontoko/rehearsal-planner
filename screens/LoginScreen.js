@@ -112,7 +112,7 @@ class LoginScreen extends React.Component {
 						<Input secureTextEntry value={this.state.password} onChangeText={(text) => this.setState({ password: text })}></Input>
 					</Item>
 					<ListItem style={{borderBottomWidth: 0}}>
-						<CheckBox checked={this.props.ifSaveEmail.saved} onPress={() => { this.props.togleSaveEmail(); }} />
+						<CheckBox checked={this.props.ifSaveEmail.saved} onPress={() => this.props.togleSaveEmail() } />
 						<Body>
 							<Text style={{ fontSize: 14, color: 'gray' }}>メールアドレスを記憶</Text>
 						</Body>

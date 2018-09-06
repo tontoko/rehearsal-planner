@@ -1,21 +1,21 @@
 import React from 'react';
 import { StatusBar, ListView } from 'react-native';
 import { Content, Header, Left, Right, Icon, Container, Button, Body, Title, Text, List, Form, Item, ListItem, Label, View, Input, CheckBox, Fab } from 'native-base';
-import { connect } from 'react-redux';
-import * as Actions from '../actions/actions';
-import { bindActionCreators } from 'redux';
 import DatePicker from 'react-native-datepicker';
-import moment from 'moment'
+import moment from 'moment';
+import * as firebase from 'firebase';
 
 const id = 1, name = 'なんとかさん1'
 
-class ScheduleCreateScreen extends React.Component {
+export default class ScheduleCreateScreen extends React.Component {
     state = {
         title: '',
         location: '',
         participants: [],
         date: null,
     }
+
+    
 
     ifChecked = (filterId) => {
         const filtered = this.state.participants.filter(n => n.id == filterId);
@@ -28,13 +28,23 @@ class ScheduleCreateScreen extends React.Component {
 
     createNewSchedule = () => {
         if (this.state.title && this.state.location && this.state.participants.length !== 0 && this.state.date) {
-            this.props.createSchedule({
+            const db = firebase.firestore();
+            const settings = { timestampsInSnapshots: true };
+            db.settings(settings);
+            const { currentUser } = firebase.auth();
+
+            db.collection(`users/${currentUser.uid}/schedules`).add({
                 title: this.state.title,
                 location: this.state.location,
                 participants: this.state.participants,
                 date: this.state.date,
             })
-            this.props.navigation.navigate('ScheduleListScreen');
+                .then(() => {
+                    this.props.navigation.goBack();
+                })
+                .catch((error) => {
+                    console.log(error);
+                });
         } else {
             alert('必須項目が入力されていません');
         }
@@ -122,13 +132,3 @@ class ScheduleCreateScreen extends React.Component {
         );
     }
 }
-
-
-const mapStateToProps = (state) => {
-    return state
-}
-const mapDispatchToProps = (dispatch) => {
-    return bindActionCreators(Actions, dispatch)
-}
-
-export default connect(mapStateToProps, mapDispatchToProps)(ScheduleCreateScreen)

@@ -1,20 +1,43 @@
 import React from 'react';
 import { StatusBar, ListView } from 'react-native';
 import { Content, Header, Left, Right, Icon, Container, Button, Body, Title, Text, List, Separator, ListItem, Fab, View } from 'native-base';
-import { connect } from 'react-redux';
-import * as Actions from '../actions/actions';
-import { bindActionCreators } from 'redux';
 import moment from 'moment';
+import * as firebase from 'firebase';
 
-class ScheduleListScreen extends React.Component {
+export default class ScheduleListScreen extends React.Component {
 	constructor(props) {
 		super(props);
 		this.ds = new ListView.DataSource({ rowHasChanged: (r1, r2) => r1 !== r2 });
+		this.state = {
+			schedules: [],
+		};
+		this.currentUser = firebase.auth().currentUser;
+		this.db = firebase.firestore();
+		this.settings = { timestampsInSnapshots: true };
+		this.db.settings(this.settings);
 	}
+
+	componentWillMount() {
+		this.db.collection(`users/${this.currentUser.uid}/schedules`)
+			.onSnapshot((snapShot) => {
+				let schedules = [];
+				snapShot.forEach((doc) => {
+					const docData = doc.data();
+					schedules.push({ ...docData, id: doc.id });
+				});
+				this.setState({ schedules });
+			});
+	}
+
 	deleteRow(data, secId, rowId, rowMap) {
-		rowMap[`${secId}${rowId}`].props.closeRow();
-		this.props.deleteSchedule(data.id);
+		this.db.collection(`users/${this.currentUser.uid}/schedules`).doc(data.id)
+			.delete()
+			.then(() => rowMap[`${secId}${rowId}`].props.closeRow())
+			.catch(function (error) {
+				console.log(error);
+			});
 	}
+
 	render() {
 		return (
 			<Container style={{ paddingTop: StatusBar.currentHeight ? StatusBar.currentHeight : 0 }}>
@@ -32,9 +55,18 @@ class ScheduleListScreen extends React.Component {
 						<List
 							leftOpenValue={75}
 							rightOpenValue={-75}
-							dataSource={this.ds.cloneWithRows(this.props.schedules.schedules)}
+							dataSource={this.ds.cloneWithRows(this.state.schedules)}
 							renderRow={data =>
-								<ListItem onPress={() => this.props.navigation.navigate('ScheduleEditScreen', {id: data.id,})}>
+								<ListItem onPress={() => this.props.navigation.navigate(
+									'ScheduleEditScreen', 
+									{
+										id: data.id, 
+										title: data.title, 
+										location: data.location, 
+										date: data.date, 
+										participants: data.participants
+									}
+								)}>
 									<Body>
 										<Text>{data.title}</Text>
 										<Text note>{data.location}</Text>
@@ -66,13 +98,3 @@ class ScheduleListScreen extends React.Component {
 		);
 	}
 }
-
-
-const mapStateToProps = (state) => {
-	return state;
-};
-const mapDispatchToProps = (dispatch) => {
-	return bindActionCreators(Actions, dispatch);
-};
-
-export default connect(mapStateToProps, mapDispatchToProps)(ScheduleListScreen);
