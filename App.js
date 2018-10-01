@@ -4,7 +4,6 @@ import { NavigationActions } from "react-navigation";
 import { Font, AppLoading } from "expo";
 import { bindActionCreators } from 'redux';
 import { Provider, connect } from 'react-redux';
-import store, {persistor} from './store';
 import * as Actions from './actions/actions';
 import { PersistGate } from 'redux-persist/integration/react';
 import firebase from 'firebase';
@@ -28,44 +27,36 @@ const config = {
 };
 firebase.initializeApp(config);
 
-
-const mapStateToProps = (state) => {
-  return state;
-}
-
-const mapDispatchToProps = (dispatch) => {
-  return bindActionCreators(Actions, dispatch)
-}
-
-export default App = () => {
-  return (
-    <Provider store={store}>
-      <PersistGate loading={null} persistor={persistor}>
-        <AppMain />
-      </PersistGate>
-    </Provider>
-  );
-}
-
-class Main extends React.Component {
+export default class App extends React.Component {
   constructor() {
     super();
     this.state = {
       loading: true,
       fontLoaded: false,
+      user: null
     };
   }
 
   async componentWillMount() {
-    BackHandler.addEventListener("hardwareBackPress", this.onBackPress);
     this.authSubscription = firebase.auth().onAuthStateChanged((user) => {
       this.setState({
         loading: false,
       });
       if (user) {
-        this.props.logIn(user);
+        const db = firebase.firestore();
+        const settings = { timestampsInSnapshots: true };
+        db.settings(settings);
+        db.collection('users').doc(user.uid).set({
+          id: user.uid,
+          name: user.displayName,
+          email: user.email,
+          image: user.photoURL,
+        })
+        .then(() => {
+          this.setState({user});
+        });
       } else {
-        this.props.logOut(user);
+        this.setState({ user: null });
       }
     });
     await Font.loadAsync({
@@ -80,21 +71,11 @@ class Main extends React.Component {
     BackHandler.removeEventListener("hardwareBackPress", this.onBackPress);
   }
 
-  onBackPress = () => {
-    const { dispatch, nav } = this.props;
-    if (nav.index === 0) {
-      return false;
-    }
-
-    dispatch(NavigationActions.back());
-    return true;
-  };
-
   render() {
     if (this.state.fontLoaded && !this.state.loading) {
       // ログイン状態によって画面遷移
-      if (this.props.user.user) {
-        if (this.props.user.user.displayName) {
+      if (this.state.user) {
+        if (this.state.user.displayName) {
           return <AppDrawerNavigator />
         } else {
           // ユーザー名設定画面
@@ -108,5 +89,3 @@ class Main extends React.Component {
     }
   }
 }
-const AppMain =  connect(mapStateToProps, mapDispatchToProps)(Main);
-

@@ -6,7 +6,7 @@ import { bindActionCreators } from 'redux';
 import { StatusBar, Dimensions } from 'react-native';
 import * as firebase from 'firebase';
 
-class LoginScreen extends React.Component {
+export default class LoginScreen extends React.Component {
 	constructor(props) {
 		super(props);
 		this.state = {
@@ -18,20 +18,9 @@ class LoginScreen extends React.Component {
 		this.onLayout = this.onLayout.bind(this);
 	}
 
-	componentWillMount() {
-		if (this.props.ifSaveEmail.saved) {
-			this.setState({email: this.props.ifSaveEmail.email});
-		}
-	}
-
 	login() {
 		const email = this.state.email;
 		const password = this.state.password;
-		if (this.props.ifSaveEmail.saved) {
-			this.props.saveEmail(email);
-		} else{
-			this.props.saveEmail('');
-		}
 		if (email && password) {
 			firebase.auth().signInWithEmailAndPassword(email, password)
 				.catch((error) => {
@@ -111,12 +100,6 @@ class LoginScreen extends React.Component {
 						<Label style={{ paddingTop: '1%', fontSize: 14 }}>パスワード</Label>
 						<Input secureTextEntry value={this.state.password} onChangeText={(text) => this.setState({ password: text })}></Input>
 					</Item>
-					<ListItem style={{borderBottomWidth: 0}}>
-						<CheckBox checked={this.props.ifSaveEmail.saved} onPress={() => this.props.togleSaveEmail() } />
-						<Body>
-							<Text style={{ fontSize: 14, color: 'gray' }}>メールアドレスを記憶</Text>
-						</Body>
-					</ListItem>
 					<View style={{ 
 						alignSelf: this.state.height >= this.state.width ? 'flex-end' : 'flex-start',
 						flex: 1, 
@@ -145,12 +128,3 @@ class LoginScreen extends React.Component {
 		);
 	}
 }
-
-const mapStateToProps = (state) => {
-	return state;
-};
-const mapDispatchToProps = (dispatch) => {
-	return bindActionCreators(Actions, dispatch);
-};
-
-export default connect(mapStateToProps, mapDispatchToProps)(LoginScreen);

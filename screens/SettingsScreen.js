@@ -7,15 +7,12 @@ import { connect } from 'react-redux';
 import * as Actions from '../actions/actions';
 import { bindActionCreators } from 'redux';
 
-class Screen extends React.Component {
+export default class Screen extends React.Component {
 	render() {
-		console.log(this.props.user.user);
 		return (
 			<View style={styles.container}>
 				<Button onPress={() => 
-					firebase.auth().signOut().then(() => {
-						this.props.logOut();
-					})
+					firebase.auth().signOut()
 				}>
 					<Text>ログアウト</Text>
 				</Button>
@@ -32,12 +29,3 @@ const styles = StyleSheet.create({
 		justifyContent: 'center',
 	},
 });
-
-const mapStateToProps = (state) => {
-	return state;
-};
-const mapDispatchToProps = (dispatch) => {
-	return bindActionCreators(Actions, dispatch);
-};
-
-export default connect(mapStateToProps, mapDispatchToProps)(Screen);

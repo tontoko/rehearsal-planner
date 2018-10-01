@@ -6,7 +6,7 @@ import { bindActionCreators } from 'redux';
 import { StatusBar, Dimensions } from 'react-native';
 import * as firebase from 'firebase';
 
-class DisplayNameSettingScreen extends React.Component {
+export default class DisplayNameSettingScreen extends React.Component {
 	constructor(props) {
 		super(props);
 		this.state = {
@@ -27,14 +27,20 @@ class DisplayNameSettingScreen extends React.Component {
 
     async submit() {
         let user = firebase.auth().currentUser;
+		let credential;
 
         await user.updateProfile({
             displayName: this.state.name,
         }).catch((error) => {
 			alert(error);
 			return false;
-        });
-		await this.props.setUserName(this.state.name);
+		});
+		// ユーザー再認証
+		user.reauthenticateAndRetrieveDataWithCredential(credential)
+		.catch(function (error) {
+			alert(error);
+		});
+
     }
 
 	render() {
@@ -58,12 +64,3 @@ class DisplayNameSettingScreen extends React.Component {
 		);
 	}
 }
-
-const mapStateToProps = (state) => {
-	return state;
-};
-const mapDispatchToProps = (dispatch) => {
-	return bindActionCreators(Actions, dispatch);
-};
-
-export default connect(mapStateToProps, mapDispatchToProps)(DisplayNameSettingScreen);

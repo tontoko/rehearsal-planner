@@ -1,5 +1,5 @@
 import React from 'react';
-import { StatusBar, ListView } from 'react-native';
+import { StatusBar, ListView, Alert } from 'react-native';
 import { Content, Header, Left, Right, Icon, Container, Button, Body, Title, Text, List, Separator, ListItem, Fab, View } from 'native-base';
 import moment from 'moment';
 import * as firebase from 'firebase';
@@ -34,7 +34,7 @@ export default class ScheduleListScreen extends React.Component {
 			.delete()
 			.then(() => rowMap[`${secId}${rowId}`].props.closeRow())
 			.catch(function (error) {
-				console.log(error);
+				alert(error);
 			});
 	}
 
@@ -64,7 +64,8 @@ export default class ScheduleListScreen extends React.Component {
 										title: data.title, 
 										location: data.location, 
 										date: data.date, 
-										participants: data.participants
+										participants: data.participants,
+										edit: true,
 									}
 								)}>
 									<Body>
@@ -76,7 +77,17 @@ export default class ScheduleListScreen extends React.Component {
 									</Right>              
 								</ListItem>}
 							renderLeftHiddenRow={data =>
-								<Button full onPress={() => alert(data.participants[0].name)}>
+								<Button full onPress={() => {
+									let participants;
+									data.participants.forEach((e, i) => {
+										if (i == 0) {
+											participants = e.name;
+										} else {
+											participants += '\n' + e.name;
+										}
+									});
+									Alert.alert('参加者一覧', participants);
+								}}>
 									<Icon active name="information-circle" />
 								</Button>}
 							renderRightHiddenRow={(data, secId, rowId, rowMap) =>
