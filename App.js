@@ -17,6 +17,8 @@ import LoadingScreen from './screens/LoadingScreen';
 moment.locale('ja');
 require("firebase/firestore");
 
+let db;
+
 const config = {
   apiKey: ENV.FIREBASE_API_KEY,
   authDomain: ENV.FIREBASE_AUTH_DOMAIN,
@@ -33,56 +35,82 @@ export default class App extends React.Component {
     this.state = {
       loading: true,
       fontLoaded: false,
-      user: null
+      user: null,
+      newLogin: false,
+      schedules: [],
+      facebookFriends: [],
     };
   }
 
-  async componentWillMount() {
-    this.authSubscription = firebase.auth().onAuthStateChanged((user) => {
-      this.setState({
-        loading: false,
-      });
-      if (user) {
-        const db = firebase.firestore();
-        const settings = { timestampsInSnapshots: true };
-        db.settings(settings);
-        db.collection('users').doc(user.uid).set({
-          id: user.uid,
-          name: user.displayName,
-          email: user.email,
-          image: user.photoURL,
-        })
-        .then(() => {
-          this.setState({user});
-        });
-      } else {
-        this.setState({ user: null });
-      }
-    });
+  async componentDidMount() {
     await Font.loadAsync({
       Roboto: require("native-base/Fonts/Roboto.ttf"),
       Roboto_medium: require("native-base/Fonts/Roboto_medium.ttf")
     });
     this.setState({ fontLoaded: true });
+    this.authSubscription = firebase.auth().onAuthStateChanged(async (user) => {
+      if (user) {
+        db = firebase.firestore();
+        settings = { timestampsInSnapshots: true };
+        db.settings(settings);
+        this.setState({user});
+        const provider = user.providerData[0].providerId;
+        // facebookの場合友達リストを取得
+        if (provider == 'facebook.com') {
+          db.collection('users').doc(user.uid)
+          .get()
+          .then(doc => {
+            const token = doc.data().accessToken;
+            this.getFriendsList(provider, token);
+          })
+        }
+      } else {
+        this.setState({ user: 'noUser' });
+      }
+      this.setState({ loading: false });
+    });
   }
 
-  componentWillUnmount() {
-    this.authSubscription();
-    BackHandler.removeEventListener("hardwareBackPress", this.onBackPress);
+  async getFriendsList(provider, token) {
+    if (provider == 'facebook.com') {
+      let result = [];
+      const response = await fetch(`https://graph.facebook.com/v3.1/me/friends?access_token=${token}`);
+      const datas = await response.json().data;
+      if (datas) {
+        Promise.all(datas.forEach((data, index) => {
+          db.collection('users').where('facebookId', '==', data.id)
+          .get()
+          .then(snapShot => {
+            snapShot.forEach(doc => {
+              result.push(doc);
+            })
+          })
+        }));
+        this.setState({ facebookFriends: result });
+      }
+    } 
+  }
+
+  newLogin() {
+    this.setState({newLogin: !this.state.newLogin});
+  }
+
+  updateDisplayName() {
+    this.setState({ user: firebase.auth().currentUser});
   }
 
   render() {
-    if (this.state.fontLoaded && !this.state.loading) {
+    if (this.state.fontLoaded && !this.state.loading && this.state.user) {
       // ログイン状態によって画面遷移
-      if (this.state.user) {
+      if (this.state.user !== 'noUser' && !this.state.newLogin) {
         if (this.state.user.displayName) {
-          return <AppDrawerNavigator />
+          return <AppDrawerNavigator screenProps={{ facebookFriends: this.facebookFriends }} />
         } else {
           // ユーザー名設定画面
-          return <DisplayNameSettingScreen />
+          return <DisplayNameSettingScreen screenProps={{ updateDisplayName: () => this.updateDisplayName() }} />
         }
       } else {
-        return <LoginStackNavigator />
+        return <LoginStackNavigator screenProps={{ newLogin: () => this.newLogin() }}/>
       }
     } else {
       return <LoadingScreen />

@@ -1,4 +1,5 @@
 import HomeStackNavigator from './HomeStackNavigator';
+import ContactStackNavigator from './ContactStackNavigator';
 import { createDrawerNavigator, DrawerItems, createStackNavigator } from 'react-navigation';
 import SettingsScreen from '../screens/SettingsScreen';
 import React from 'react';
@@ -45,6 +46,7 @@ const Drawer = (props) => {
 
 export default AppDrawerNavigator = createDrawerNavigator({
 	Home: HomeStackNavigator,
+	Contact: ContactStackNavigator,
 	Settings: SettingsScreen,
 }, {
 	contentComponent: Drawer,

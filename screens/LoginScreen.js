@@ -5,6 +5,9 @@ import * as Actions from '../actions/actions';
 import { bindActionCreators } from 'redux';
 import { StatusBar, Dimensions } from 'react-native';
 import * as firebase from 'firebase';
+import { NavigationActions, StackActions } from 'react-navigation';
+
+let db;
 
 export default class LoginScreen extends React.Component {
 	constructor(props) {
@@ -16,13 +19,21 @@ export default class LoginScreen extends React.Component {
 			height: Dimensions.get('window').height,
 		};
 		this.onLayout = this.onLayout.bind(this);
+		db = firebase.firestore();
+		const settings = { timestampsInSnapshots: true };
+		db.settings(settings);
 	}
 
 	login() {
 		const email = this.state.email;
 		const password = this.state.password;
+		this.props.screenProps.newLogin();
+
 		if (email && password) {
 			firebase.auth().signInWithEmailAndPassword(email, password)
+				.then(() => {
+					this.saveUserData();
+				})
 				.catch((error) => {
 					const errorMessage = error.message;
 					alert(errorMessage);
@@ -35,7 +46,7 @@ export default class LoginScreen extends React.Component {
 	async facebookLogin() {
 		const { type, token } = await Expo.Facebook.logInWithReadPermissionsAsync(
 			'496025710872464',
-			{ permissions: ['public_profile', 'email'] }
+			{ permissions: ['public_profile', 'email', 'user_friends'] }
 		)
 		.catch((error) => {
 			alert(error);
@@ -43,9 +54,13 @@ export default class LoginScreen extends React.Component {
 
 		if (type === 'success') {
 			const credential = firebase.auth.FacebookAuthProvider.credential(token);
+			this.props.screenProps.newLogin();
 
 			// const response = await fetch(`https://graph.facebook.com/me?access_token=${token}`);
 			await firebase.auth().signInAndRetrieveDataWithCredential(credential)
+				.then(() => {
+					this.saveUserData(token);
+				})
 				.catch(() => {
 					alert('エラーが発生しました');
 				});
@@ -56,20 +71,118 @@ export default class LoginScreen extends React.Component {
 		const result = await Expo.Google.logInAsync({
 			androidClientId: '460431429680-tpbn5maqhjhbgb8dhrnad6l4uig460mq.apps.googleusercontent.com',
 			iosClientId: '460431429680-iacbej0tutia28puftcvqgos3pv1go2h.apps.googleusercontent.com',
-			scopes: ['profile', 'email'],
+			scopes: ['profile', 'email', 'contacts'],
 		});
 
-		if (result.type === 'success') {
+		const { accessToken, type } = result;
+
+		if (type === 'success') {
 			// const credential = firebase.auth.GoogleAuthProvider.credential(result.accessToken);
 
 			const credential = firebase.auth.GoogleAuthProvider.credential(result);
+			this.props.screenProps.newLogin();
 
 			await firebase.auth().signInAndRetrieveDataWithCredential(credential)
+				.then(() => {
+					console.log(accessToken)
+					this.saveUserData(accessToken);
+				})
 				.catch((e) => {
 					// alert('エラーが発生しました');
 					alert(e);
 				});
 		}
+	}
+
+	async saveUserData(token) {
+		user = firebase.auth().currentUser;
+		const provider = user.providerData[0].providerId;
+		const profile = user.providerData[0];
+
+		await db.collection('users').where('email', '==', user.email)
+			.get()
+			.then(async (doc) => {
+				let targetUser;
+				await Promise.all(doc.map((async e => {
+					targetUser = e;
+				})));
+				if (!count) {
+					// ユーザー情報を記録
+					if (token && provider == 'facebook.com') {
+						db.collection('users').doc(user.uid).set({
+							id: user.uid,
+							email: user.email,
+							image: user.photoURL,
+							name: user.displayName,
+							accessToken: token,
+							facebookId: profile.uid,
+						})
+							.then(() => {
+								this.props.screenProps.newLogin();
+							})
+					} else if (token) {
+						db.collection('users').doc(user.uid).set({
+							id: user.uid,
+							email: user.email,
+							image: user.photoURL,
+							name: user.displayName,
+							accessToken: token,
+						})
+							.then(() => {
+								this.props.screenProps.newLogin();
+							})
+					} else {
+						db.collection('users').doc(user.uid).set({
+							id: user.uid,
+							email: user.email,
+							image: user.photoURL,
+							name: user.displayName,
+						})
+							.then(() => {
+								this.props.screenProps.newLogin();
+							})
+					}
+				} else {
+					// ユーザー情報を記録
+					if (token && provider == 'facebook.com') {
+						db.collection('users').doc(targetUser.id).set({
+							id: user.uid,
+							email: user.email,
+							image: user.photoURL,
+							name: user.displayName,
+							accessToken: token,
+							facebookId: profile.uid,
+						})
+							.then(() => {
+								this.props.screenProps.newLogin();
+							})
+					} else if (token) {
+						db.collection('users').doc(targetUser.id).set({
+							id: user.uid,
+							email: user.email,
+							image: user.photoURL,
+							name: user.displayName,
+							accessToken: token,
+						})
+							.then(() => {
+								this.props.screenProps.newLogin();
+							})
+					} else {
+						db.collection('users').doc(targetUser.id).set({
+							id: user.uid,
+							email: user.email,
+							image: user.photoURL,
+							name: user.displayName,
+						})
+							.then(() => {
+								this.props.screenProps.newLogin();
+							})
+					}
+				}
+			})
+		
+		
+			
 	}
 
 	onLayout() {
@@ -94,11 +207,17 @@ export default class LoginScreen extends React.Component {
 				}}>
 					<Item floatingLabel>
 						<Label style={{ paddingTop: '1%', fontSize: 14}}>メールアドレス</Label>
-						<Input autoCapitalize='none' value={this.state.email} onChangeText={(text) => this.setState({ email: text })}></Input>
+						<Input keyboardType="email-address"
+							autoCorrect={false}
+							autoCapitalize="none" 
+							value={this.state.email} 
+							onChangeText={(text) => this.setState({ email: text })}></Input>
 					</Item>
 					<Item floatingLabel>
 						<Label style={{ paddingTop: '1%', fontSize: 14 }}>パスワード</Label>
-						<Input secureTextEntry value={this.state.password} onChangeText={(text) => this.setState({ password: text })}></Input>
+						<Input secureTextEntry 
+						value={this.state.password} 
+						onChangeText={(text) => this.setState({ password: text })}></Input>
 					</Item>
 					<View style={{ 
 						alignSelf: this.state.height >= this.state.width ? 'flex-end' : 'flex-start',

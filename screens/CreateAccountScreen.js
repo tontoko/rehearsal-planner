@@ -6,7 +6,7 @@ import { bindActionCreators } from 'redux';
 import { StatusBar, Dimensions } from 'react-native';
 import * as firebase from 'firebase';
 
-class CreateAccountScreen extends React.Component {
+export default class CreateAccountScreen extends React.Component {
 	constructor(props) {
 		super(props);
 		this.state = {
@@ -65,7 +65,13 @@ class CreateAccountScreen extends React.Component {
 				}}>
 					<Item floatingLabel>
 						<Label style={{ paddingTop: '1%', fontSize: 14 }}>メールアドレス</Label>
-						<Input autoCapitalize='none' value={this.state.email} onChangeText={(text) => this.setState({ email: text })}></Input>
+						<Input 
+							keyboardType="email-address"
+							autoCorrect={false}
+							autoCapitalize="none" 
+							value={this.state.email} 
+							onChangeText={(text) => this.setState({ email: text })}
+						></Input>
 					</Item>
 					<Item floatingLabel>
 						<Label style={{ paddingTop: '1%', fontSize: 14 }}>パスワード</Label>
@@ -81,12 +87,3 @@ class CreateAccountScreen extends React.Component {
 		);
 	}
 }
-
-const mapStateToProps = (state) => {
-	return state;
-};
-const mapDispatchToProps = (dispatch) => {
-	return bindActionCreators(Actions, dispatch);
-};
-
-export default connect(mapStateToProps, mapDispatchToProps)(CreateAccountScreen);

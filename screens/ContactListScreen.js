@@ -1,18 +1,19 @@
 import React from 'react';
 import { StatusBar, ListView, Alert } from 'react-native';
 import { Content, Header, Left, Right, Icon, Container, Button, Body, Title, Text, List, Separator, ListItem, Fab, View } from 'native-base';
-import LoadingScreen from './LoadingScreen'
+import LoadingScreen from './LoadingScreen';
 import moment from 'moment';
 import * as firebase from 'firebase';
 
-let db, currentUser
+let db;
+let currentUser;
 
-export default class ScheduleListScreen extends React.Component {
+export default class ContactListScreen extends React.Component {
 	constructor(props) {
 		super(props);
 		this.ds = new ListView.DataSource({ rowHasChanged: (r1, r2) => r1 !== r2 });
 		this.state = {
-			schedules: [],
+			contacts: [],
 			loading: true,
 		};
 		currentUser = firebase.auth().currentUser;
@@ -21,26 +22,46 @@ export default class ScheduleListScreen extends React.Component {
 		db.settings(settings);
 	}
 
-	componentWillMount() {
-		db.collection('schedules').where(this.replaceAll(currentUser.email, '.', '%2E'), '==', true)
-			.onSnapshot((snapShot) => {
-				let schedules = [];
-				snapShot.forEach(doc => {
-					const docData = doc.data();
-					schedules.push({ ...docData, id: doc.id });
-				});
-				this.setState({ schedules, loading: false });
-			});
-	}
-
 	replaceAll(str, before, after) {
 		return str.split(before).join(after);
 	}
 
+	componentWillMount() {
+		db.collection('contacts').where(this.replaceAll(currentUser.email, '.', '%2E'), '==', true)
+			.get()
+			.then((snapShot) => {
+				this.setState({ contacts: [] });
+				if (snapShot.empty) {
+					this.setState({ loading: false });
+				} else {
+					snapShot.forEach(doc => {
+						const docData = Object.keys(doc.data());
+						// const result = await docData.filter(e => currentUser.email);
+						docData.forEach((userEmail) => {
+							const replacedEmail = this.replaceAll(userEmail, '%2E', '.');
+							if (replacedEmail !== currentUser.email) {
+								db.collection('users').where('email', '==', replacedEmail)
+									.get()
+									.then((userDocs) => {
+										userDocs.forEach(userDoc => {
+											this.setState({ contacts: [...this.state.contacts, { ...userDoc.data(), id: doc.id }], loading: false });
+										});
+									});
+							}
+						});
+					});
+				}
+			});
+	}
+
 	deleteRow(data, secId, rowId, rowMap) {
 		rowMap[`${secId}${rowId}`].props.closeRow();
-		db.collection('schedules').doc(data.id)
+		db.collection('contacts').doc(data.id)
 			.delete()
+			.then(() => {
+				const contacts = this.state.contacts.filter(e => e.id !== data.id);
+				this.setState({contacts});
+			})
 			.catch(error => {
 				alert(error);
 			});
@@ -54,11 +75,11 @@ export default class ScheduleListScreen extends React.Component {
 				<Container style={{ paddingTop: StatusBar.currentHeight ? StatusBar.currentHeight : 0 }}>
 					<Header>
 						<Left>
-							<Icon name="menu" onPress={() => {this.props.navigation.openDrawer();}
+							<Icon name="menu" onPress={() => { this.props.navigation.openDrawer(); }
 							} />
 						</Left>
 						<Body>
-							<Title>スケジュール</Title>
+							<Title>コンタクト</Title>
 						</Body>
 					</Header>
 					<View style={{ flex: 1 }}>
@@ -66,38 +87,16 @@ export default class ScheduleListScreen extends React.Component {
 							<List
 								leftOpenValue={75}
 								rightOpenValue={-75}
-								dataSource={this.ds.cloneWithRows(this.state.schedules)}
+								dataSource={this.ds.cloneWithRows(this.state.contacts)}
 								renderRow={data =>
-									<ListItem onPress={() => this.props.navigation.navigate(
-										'ScheduleEditScreen', 
-										{
-											id: data.id, 
-											title: data.title, 
-											location: data.location, 
-											date: data.date, 
-											participants: data.participants,
-											type: 'edit',
-										}
-									)}>
+									<ListItem>
 										<Body>
-											<Text>{data.title}</Text>
-											<Text note>{data.location}</Text>
+											<Text>{data.name}</Text>
+											<Text note>{data.email}</Text>
 										</Body>
-										<Right>
-											<Text note>{moment(data.date).calendar()}</Text>
-										</Right>              
 									</ListItem>}
 								renderLeftHiddenRow={data =>
 									<Button full onPress={() => {
-										let participants;
-										data.participants.forEach((e, i) => {
-											if (i == 0) {
-												participants = e.name;
-											} else {
-												participants += '\n' + e.name;
-											}
-										});
-										Alert.alert('参加者一覧', participants);
 									}}>
 										<Icon active name="information-circle" />
 									</Button>}
@@ -111,7 +110,7 @@ export default class ScheduleListScreen extends React.Component {
 							containerStyle={{}}
 							style={{ backgroundColor: '#5067FF' }}
 							position="bottomRight"
-							onPress={() => this.props.navigation.navigate('ScheduleCreateScreen')}
+							onPress={() => this.props.navigation.navigate('ContactCreateScreen')}
 						>
 							<Icon name="create" />
 						</Fab>
@@ -120,4 +119,4 @@ export default class ScheduleListScreen extends React.Component {
 			);
 		}
 	}
-}
+} 

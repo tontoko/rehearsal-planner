@@ -20,8 +20,7 @@ export default class ScheduleEditScreen extends React.Component {
 			date: date,
 			id: id,
 			newUser: [],
-			contacts: [],
-			selected: participants,
+			selected: [],
 			addName: '',
 		};
 	}
@@ -32,7 +31,7 @@ export default class ScheduleEditScreen extends React.Component {
 			payload => {
 				if (this.props.navigation.state.params.type == 'selected') {
 					const selected = this.props.navigation.getParam('selected', []);
-					this.setState({ selected, participants: selected });
+					this.setState({ selected });
 				}
 			}
 		);
@@ -43,17 +42,6 @@ export default class ScheduleEditScreen extends React.Component {
 
 		// currentUser取得
 		currentUser = firebase.auth().currentUser;
-
-		// アドレス帳リスト取得
-		db.collection('users')
-			.get().then((snapShot) => {
-				let users = [];
-				snapShot.forEach((doc) => {
-					const docData = doc.id;
-					users.push(docData);
-				});
-				this.setState({ contacts: users });
-			});
 	}
 
 	ifChecked(filterId) {
@@ -65,13 +53,46 @@ export default class ScheduleEditScreen extends React.Component {
 		}
 	}
 
-	editSchedule() {
-		if (this.state.title && this.state.location && this.state.participants && this.state.date) {
-			db.collection(`users/${currentUser.uid}/schedules`).doc(this.state.id).set({
+	replaceAll(str, before, after) {
+		return str.split(before).join(after);
+	}
+
+	async editSchedule() {
+		let checkNewUser = 0;
+		await this.state.newUser.forEach(async e => {
+			if (!e.email || !e.name) {
+				checkNewUser++;
+			} else if (!e.email.match(/.+@.+\..+/)) {
+				alert('メールアドレスの形式が正しくありません');
+				return false;
+			}
+		})
+		if (this.state.title && this.state.location && this.state.date && checkNewUser == 0) {
+			const participants = [ ...this.state.participants, ...this.state.selected, ...this.state.newUser ];
+			// データベース検索用のidリスト
+			let list = {};
+			await Promise.all(participants.map(async (user, i) => {
+				if (!user.id) {
+					await db.collection('users').add({
+						name: user.name,
+						email: user.email,
+					})
+						.then(newUser => {
+							list = { ...list, [this.replaceAll(user.email, '.', '%2E')]: true };
+							participants[i].id = newUser.id;
+							db.collection('users').doc(newUser.id).update({
+								id: newUser.id,
+							})
+						})
+				} else {
+					list = { ...list, [this.replaceAll(newUser.email, '.', '%2E')]: true };				}
+			}));
+			db.collection('schedules').doc(this.state.id).update({
 				title: this.state.title,
 				location: this.state.location,
-				participants: this.state.participants,
+				participants,
 				date: this.state.date,
+				...list,
 			})
 				.then(() => {
 					this.props.navigation.goBack();
@@ -89,11 +110,26 @@ export default class ScheduleEditScreen extends React.Component {
 					<Body>
 						<Item floatingLabel>
 							<Label style={{ paddingTop: '1%', fontSize: 14 }}>名前</Label>
-							<Input onChangeText={(text) => this.setState({ title: text })} value={this.state.newUser[index].name} />
+							<Input
+								onChangeText={(text) => {
+									let newUser = this.state.newUser;
+									newUser[index].name = text;
+									this.setState({ newUser });
+								}}
+								value={this.state.newUser[index].name} />
 						</Item>
 						<Item floatingLabel>
 							<Label style={{ paddingTop: '1%', fontSize: 14 }}>メールアドレス</Label>
-							<Input onChangeText={(text) => this.setState({ title: text })} value={this.state.newUser[index].email} />
+							<Input
+								keyboardType="email-address"
+								autoCorrect={false}
+								autoCapitalize="none"
+								onChangeText={(text) => {
+									let newUser = this.state.newUser;
+									newUser[index].email = text;
+									this.setState({ newUser });
+								}}
+								value={this.state.newUser[index].email} />
 						</Item>
 					</Body>
 					<Button
@@ -113,13 +149,33 @@ export default class ScheduleEditScreen extends React.Component {
 
 	renderSelectedUser() {
 		let list = [];
-		this.state.selected.forEach(e => {
+		this.state.participants.forEach((e, i) => {
 			list.push(
 				(
-					<ListItem key={e.id}>
+					<ListItem key={i}>
 						<Body>
 							<Text>{e.name}</Text>
 						</Body>
+					</ListItem>
+				)
+			);
+		});
+		this.state.selected.forEach((e, i) => {
+			list.push(
+				(
+					<ListItem key={i + 's'}>
+						<Body>
+							<Text>{e.name}</Text>
+						</Body>
+						<Button
+							transparent
+							onPress={() => {
+								const deleted = this.state.selected.filter(n => n.email !== e.email);
+								this.setState({ selected: deleted });
+							}}
+						>
+							<Icon name="close" />
+						</Button>
 					</ListItem>
 				)
 			);
@@ -189,7 +245,7 @@ export default class ScheduleEditScreen extends React.Component {
 										<Icon name="add" />
 									</Button>
 								</Body>
-								<Button onPress={() => this.props.navigation.navigate('AdressListScreen', { users: this.state.contacts, selected: this.state.selected, type: 'edit' })}>
+								<Button onPress={() => this.props.navigation.navigate('AdressListScreen', { participants: this.state.participants, selected: this.state.selected, type: 'edit' })}>
 									<Text>アドレス帳</Text>
 								</Button>
 							</ListItem>

@@ -7,43 +7,69 @@ import { connect } from 'react-redux';
 import * as Actions from '../actions/actions';
 import { bindActionCreators } from 'redux';
 
+let db;
+let currentUser;
+
 export default class AdressListScreen extends React.Component {
 	constructor(props) {
 		super(props);
 		this.state = {
 			listData: [],
 			loading: true,
-			users: null,
 			selected: [],
 			toScreen: '',
+			participants: [],
 		};
 	}
 
 	async componentWillMount() {
 		// ユーザーと選択済みリストを取得
-		const users = this.props.navigation.getParam('users', []);
 		const selected = this.props.navigation.getParam('selected', []);
 		const type = this.props.navigation.getParam('type', '');
-		this.setState({users: users.length})
 		this.setState({ selected }); 
 		this.setState({ toScreen: type == 'create' ? 'ScheduleCreateScreen' : 'ScheduleEditScreen' })
-
+		const participants = this.props.navigation.getParam('participants', []);
+		this.setState({participants});
 		const db = firebase.firestore();
 		const settings = { timestampsInSnapshots: true };
+		currentUser = firebase.auth().currentUser;
 		db.settings(settings);
-		await users.forEach(user => {
-			db.collection('users').doc(user)
-				.get().then(doc => {
-					const docData = doc.data();
-					this.setState({listData: [...this.state.listData, docData]})
-				})
-				.catch(error => alert(error));
-		});
-		this.setState({loading: false});
+		// アドレスリスト取得
+		db.collection('contacts').where(this.replaceAll(currentUser.email, '.', '%2E'), '==', true)
+			.get()
+			.then(async (snapShot) => {
+				this.setState({ listData: [] });
+				if (snapShot.empty) {
+					this.setState({ loading: false });
+				} else {
+					snapShot.forEach(doc => {
+						const docData = Object.keys(doc.data());
+							docData.forEach(userEmail => {
+							const replacedEmail = this.replaceAll(userEmail, '%2E', '.');
+							if (replacedEmail !== currentUser.email) {
+								db.collection('users').where('email', '==', replacedEmail)
+									.get()
+									.then((userDocs) => {
+										userDocs.forEach(userDoc => {
+											this.setState({ listData: [...this.state.listData, { ...userDoc.data(), id: doc.id }] });
+										})
+										if (this.state.listData.length == 1) {
+											this.setState({ loading: false });
+										}
+									});
+								}
+							});
+						})
+				}
+			});
 	}
 
-	ifChecked(filterId) {
-		const filtered = this.state.selected.filter(n => n.id == filterId);
+	replaceAll(str, before, after) {
+		return str.split(before).join(after);
+	}
+
+	ifChecked(filterEmail) {
+		const filtered = this.state.selected.filter(n => n.email == filterEmail);
 		if (filtered.length == 0) {
 			return false;
 		} else {
@@ -51,8 +77,30 @@ export default class AdressListScreen extends React.Component {
 		}
 	}
 
+	checkBox(user) {
+		const result = this.state.participants.filter(e => e.id == user.id)
+		if (result.length > 0 ) {
+			return
+		} else {
+			return (
+				<CheckBox
+					onPress={() => {
+						if (!this.ifChecked(user.email)) {
+							const added = [...this.state.selected, user];
+							this.setState({ selected: added });
+						} else {
+							const deleted = this.state.selected.filter(n => n.id !== user.id);
+							this.setState({ selected: deleted });
+						}
+					}}
+					checked={this.ifChecked(user.email)}
+				/>
+			);
+		}
+	}
+
 	render() {
-		if (!this.state.loading && this.state.listData.length == this.state.users) {
+		if (!this.state.loading) {
 			let list = [];
 			this.state.listData.forEach(e => {
 				list.push((
@@ -65,18 +113,7 @@ export default class AdressListScreen extends React.Component {
 							<Text note numberOfLines={1}>{e.email}</Text>
 						</Body>
 						<Right>
-							<CheckBox 
-								onPress={() => {
-									if (!this.ifChecked(e.id)) {
-										const added = [...this.state.selected, e];
-										this.setState({ selected: added });
-									} else {
-										const deleted = this.state.selected.filter(n => n.id !== e.id);
-										this.setState({ selected: deleted });
-									}
-								}}
-								checked={this.ifChecked(e.id)}
-							/>
+							{this.checkBox(e)}
 						</Right>
 					</ListItem>
 				));

@@ -4,6 +4,7 @@ import { Content, Header, Left, Right, Icon, Container, Button, Body, Title, Tex
 import DatePicker from 'react-native-datepicker';
 import moment from 'moment';
 import * as firebase from 'firebase';
+import { __await } from 'tslib';
 
 let db;
 let currentUser;
@@ -15,7 +16,6 @@ export default class ScheduleCreateScreen extends React.Component {
 			title: '',
 			location: '',
 			addName: '',
-			participants: [],
 			date: null,
 			newUser: [],
 			contacts: [],
@@ -27,14 +27,10 @@ export default class ScheduleCreateScreen extends React.Component {
 		const willFocusSub = this.props.navigation.addListener(
 			'willFocus',
 			payload => {
-				const selected = this.props.navigation.getParam('selected', []);
-				selected.forEach((e) => {
-					if (!this.ifChecked(e.id)) {
-						const added = [...this.state.participants, { id: e.id, name: e.name, email: e.email }];
-						this.setState({ participants: added });
-					}
-				});
-				this.setState({selected});
+				if (this.props.navigation.getParam('type') == 'selected') {
+					const selected = this.props.navigation.getParam('selected', []);
+					this.setState({selected});
+				}
 			}
 		);
 
@@ -44,36 +40,63 @@ export default class ScheduleCreateScreen extends React.Component {
 
 		// currentUser取得
 		currentUser = firebase.auth().currentUser;
-		this.setState({ participants: [{ id: currentUser.uid, name: currentUser.displayName, email: currentUser.email } ]});
 
 		// アドレス帳リスト取得
-		db.collection('users')
-			.get().then((snapShot) => {
-				let users = [];
+		db.collection('contacts').where(currentUser.uid, '==', true)
+			.get()
+			.then((snapShot) => {
 				snapShot.forEach((doc) => {
-					const docData = doc.id;
-					users.push(docData);
+					const docData = doc.data();
+					Object.keys(docData).forEach((userId) => {
+						if (userId !== this.currentUser.uid) {
+							this.db.collection('users').doc(userId)
+								.get()
+								.then((userDoc) => {
+									this.setState({ contacts: [...this.state.contacts, userDoc.data()] });
+								});
+						}
+					});
 				});
-				this.setState({ contacts: users });
 			});
 	}
 
-	ifChecked(filterId) {
-		const filtered = this.state.participants.filter(n => n.id == filterId);
-		if (filtered.length == 0) {
-			return false;
-		} else {
-			return true;
-		}
-	}
-
-	createNewSchedule() {
-		if (this.state.title && this.state.location && this.state.participants.length !== 0 && this.state.date) {
-			db.collection(`users/${currentUser.uid}/schedules`).add({
+	async createNewSchedule() {
+		let checkNewUser = 0;
+		await this.state.newUser.forEach(async e => {
+			if (!e.email || !e.name) { 
+				checkNewUser ++; 
+			} else if (!e.email.match(/.+@.+\..+/)) {
+				alert('メールアドレスの形式が正しくありません');
+				return false;
+			}
+		})
+		if (this.state.title && this.state.location && this.state.date && checkNewUser == 0) {
+			let participants = [{ id: currentUser.uid, name: currentUser.displayName, email: currentUser.email }, ...this.state.selected, ...this.state.newUser];
+			// データベース検索用のidリスト
+			let list = {};
+			await Promise.all(participants.map(async (user, i) => {
+				if (!user.id) {
+					await db.collection('users').add({
+						name: user.name,
+						email: user.email,
+					})
+					.then(newUser => {
+						list = { ...list, [this.replaceAll(user.email, '.', '%2E')]: true };
+						participants[i].id = newUser.id;
+						db.collection('users').doc(newUser.id).update({
+							id: newUser.id,
+						})
+					})
+				} else {
+					list = { ...list, [this.replaceAll(user.email, '.', '%2E')]: true };
+				}
+			}));
+			db.collection('schedules').add({
 				title: this.state.title,
 				location: this.state.location,
-				participants: [...this.state.participants, ...this.state.newUser],
+				participants,
 				date: this.state.date,
+				...list,
 			})
 				.then(() => {
 					this.props.navigation.goBack();
@@ -85,6 +108,10 @@ export default class ScheduleCreateScreen extends React.Component {
 			alert('必須項目が入力されていません');
 		}
 	}
+
+	replaceAll(str, before, after) {
+		return str.split(before).join(after);
+	}
     
 	newUser() {
 		let newUser = [];
@@ -94,11 +121,26 @@ export default class ScheduleCreateScreen extends React.Component {
 					<Body>
 						<Item floatingLabel>
 							<Label style={{ paddingTop: '1%', fontSize: 14 }}>名前</Label>
-							<Input onChangeText={(text) => this.setState({ title: text })} value={this.state.newUser[index].name} />
+							<Input 
+								onChangeText={(text) => {
+									let newUser = this.state.newUser;
+									newUser[index].name = text;
+									this.setState({ newUser });
+								}}
+								value={this.state.newUser[index].name} />
 						</Item>
 						<Item floatingLabel>
 							<Label style={{ paddingTop: '1%', fontSize: 14 }}>メールアドレス</Label>
-							<Input onChangeText={(text) => this.setState({ title: text })} value={this.state.newUser[index].email} />
+							<Input 
+								keyboardType="email-address"
+								autoCorrect={false}
+								autoCapitalize="none" 
+								onChangeText={(text) => {
+									let newUser = this.state.newUser;
+									newUser[index].email = text;
+									this.setState({ newUser });
+								}}
+								value={this.state.newUser[index].email} />
 						</Item>
 					</Body>
 					<Button
@@ -120,25 +162,20 @@ export default class ScheduleCreateScreen extends React.Component {
 		let list = [];
 		this.state.selected.forEach(e => {
 			list.push(
-				(
-					<ListItem key={e.id}>
-						<Body>
-							<Text>{e.name}</Text>
-						</Body>
-						<CheckBox
-							onPress={() => {
-								if (!this.ifChecked(e.id)) {
-									const added = [...this.state.participants, { id: e.id, name: e.name, email: e.email }];
-									this.setState({ participants: added });
-								} else {
-									const deleted = this.state.participants.filter(n => n.id !== e.id);
-									this.setState({ participants: deleted });
-								}
-							}}
-							checked={this.ifChecked(e.id)}
-						/>
-					</ListItem>
-				)
+				<ListItem key={e.id}>
+					<Body>
+						<Text>{e.name}</Text>
+					</Body>
+					<Button
+						transparent
+						onPress={() => {
+							const deleted = this.state.selected.filter(n => n.email !== e.email);
+							this.setState({ selected: deleted });
+						}}
+					>
+						<Icon name="close" />
+					</Button>
+				</ListItem>
 			);
 		});
 		return list;

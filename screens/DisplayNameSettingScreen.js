@@ -27,18 +27,16 @@ export default class DisplayNameSettingScreen extends React.Component {
 
     async submit() {
         let user = firebase.auth().currentUser;
-		let credential;
 
         await user.updateProfile({
             displayName: this.state.name,
-        }).catch((error) => {
+		})
+		.then(() => {
+			this.props.screenProps.updateDisplayName();
+		})
+		.catch((error) => {
 			alert(error);
 			return false;
-		});
-		// ユーザー再認証
-		user.reauthenticateAndRetrieveDataWithCredential(credential)
-		.catch(function (error) {
-			alert(error);
 		});
 
     }
