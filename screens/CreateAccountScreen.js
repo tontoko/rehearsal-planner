@@ -6,6 +6,8 @@ import { bindActionCreators } from 'redux';
 import { StatusBar, Dimensions } from 'react-native';
 import * as firebase from 'firebase';
 
+let db;
+
 export default class CreateAccountScreen extends React.Component {
 	constructor(props) {
 		super(props);
@@ -17,15 +19,22 @@ export default class CreateAccountScreen extends React.Component {
 			height: Dimensions.get('window').height,
 		};
 		this.onLayout = this.onLayout.bind(this);
+		db = firebase.firestore();
+		const settings = { timestampsInSnapshots: true };
+		db.settings(settings);
 	}
 
 	createAccount() {
+		this.props.screenProps.newLogin();
 		const email = this.state.email;
 		const password = this.state.password;
 		const check = this.state.checkPassword;
 		if (email && password && check) {
 			if (password == check) {
 				firebase.auth().createUserWithEmailAndPassword(email, password)
+					.then(() => {
+						this.saveUserData();
+					})
 					.catch(() => {
 						alert('エラーが発生しました');
 					});
@@ -43,6 +52,45 @@ export default class CreateAccountScreen extends React.Component {
 			width: Dimensions.get('window').width,
 			height: Dimensions.get('window').height,
 		});
+	}
+
+
+	async saveUserData() {
+		user = firebase.auth().currentUser;
+
+		await db.collection('users').where('email', '==', user.email)
+			.get()
+			.then(async (snapShot) => {
+				let targetUser;
+				await snapShot.forEach(async doc => {
+					targetUser = doc;
+				});
+				if (!targetUser) {
+					// ユーザー情報を記録
+					db.collection('users').doc(user.uid).set({
+						id: user.uid,
+						email: user.email,
+						image: user.photoURL,
+						name: user.displayName,
+					})
+						.then(() => {
+							this.props.screenProps.newLogin();
+						})
+				} else {
+					// ユーザー情報を記録
+					db.collection('users').doc(targetUser.id).update({
+						id: user.uid,
+					})
+						.then(() => {
+							user.updateProfile({
+								displayName: targetUser.data().name,
+							})
+								.then(() => {
+									this.props.screenProps.newLogin();
+								})
+						})
+				}
+			})
 	}
 
 	render() {

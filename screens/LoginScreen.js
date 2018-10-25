@@ -71,7 +71,7 @@ export default class LoginScreen extends React.Component {
 		const result = await Expo.Google.logInAsync({
 			androidClientId: '460431429680-tpbn5maqhjhbgb8dhrnad6l4uig460mq.apps.googleusercontent.com',
 			iosClientId: '460431429680-iacbej0tutia28puftcvqgos3pv1go2h.apps.googleusercontent.com',
-			scopes: ['profile', 'email', 'contacts'],
+			scopes: ['profile', 'email'],
 		});
 
 		const { accessToken, type } = result;
@@ -84,7 +84,6 @@ export default class LoginScreen extends React.Component {
 
 			await firebase.auth().signInAndRetrieveDataWithCredential(credential)
 				.then(() => {
-					console.log(accessToken)
 					this.saveUserData(accessToken);
 				})
 				.catch((e) => {
@@ -101,12 +100,12 @@ export default class LoginScreen extends React.Component {
 
 		await db.collection('users').where('email', '==', user.email)
 			.get()
-			.then(async (doc) => {
+			.then(async (snapShot) => {
 				let targetUser;
-				await Promise.all(doc.map((async e => {
+				await Promise.all(snapShot.docs.map((async e => {
 					targetUser = e;
 				})));
-				if (!count) {
+				if (!targetUser) {
 					// ユーザー情報を記録
 					if (token && provider == 'facebook.com') {
 						db.collection('users').doc(user.uid).set({
@@ -172,7 +171,7 @@ export default class LoginScreen extends React.Component {
 							id: user.uid,
 							email: user.email,
 							image: user.photoURL,
-							name: user.displayName,
+							name: targetUser.name,
 						})
 							.then(() => {
 								this.props.screenProps.newLogin();
@@ -180,9 +179,6 @@ export default class LoginScreen extends React.Component {
 					}
 				}
 			})
-		
-		
-			
 	}
 
 	onLayout() {

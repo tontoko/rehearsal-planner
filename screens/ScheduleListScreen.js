@@ -5,7 +5,7 @@ import LoadingScreen from './LoadingScreen'
 import moment from 'moment';
 import * as firebase from 'firebase';
 
-let db, currentUser
+let db, currentUser;
 
 export default class ScheduleListScreen extends React.Component {
 	constructor(props) {

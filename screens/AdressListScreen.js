@@ -42,7 +42,7 @@ export default class AdressListScreen extends React.Component {
 				if (snapShot.empty) {
 					this.setState({ loading: false });
 				} else {
-					snapShot.forEach(doc => {
+					snapShot.docs.forEach((doc, i) => {
 						const docData = Object.keys(doc.data());
 							docData.forEach(userEmail => {
 							const replacedEmail = this.replaceAll(userEmail, '%2E', '.');
@@ -53,7 +53,7 @@ export default class AdressListScreen extends React.Component {
 										userDocs.forEach(userDoc => {
 											this.setState({ listData: [...this.state.listData, { ...userDoc.data(), id: doc.id }] });
 										})
-										if (this.state.listData.length == 1) {
+										if (this.state.listData.length >= i + 1) {
 											this.setState({ loading: false });
 										}
 									});

@@ -55,15 +55,12 @@ export default class App extends React.Component {
         db.settings(settings);
         this.setState({user});
         const provider = user.providerData[0].providerId;
-        // facebookの場合友達リストを取得
-        if (provider == 'facebook.com') {
-          db.collection('users').doc(user.uid)
+        db.collection('users').doc(user.uid)
           .get()
           .then(doc => {
             const token = doc.data().accessToken;
             this.getFriendsList(provider, token);
           })
-        }
       } else {
         this.setState({ user: 'noUser' });
       }
@@ -72,22 +69,27 @@ export default class App extends React.Component {
   }
 
   async getFriendsList(provider, token) {
+    // facebookの場合友達リストを取得
     if (provider == 'facebook.com') {
       let result = [];
-      const response = await fetch(`https://graph.facebook.com/v3.1/me/friends?access_token=${token}`);
-      const datas = await response.json().data;
+      const response = await fetch(`https://graph.facebook.com/me/friends?access_token=${token}`);
+      const datas = await response.json();
       if (datas) {
-        Promise.all(datas.forEach((data, index) => {
+        datas.data.forEach((data, i) => {
           db.collection('users').where('facebookId', '==', data.id)
           .get()
           .then(snapShot => {
-            snapShot.forEach(doc => {
-              result.push(doc);
-            })
+              result.push(snapShot.docs[0].data());
+              console.log(i)
+              console.log(datas.data.length)
+              if (datas.data.length >= i++) {
+                console.log(result);
+                this.setState({ facebookFriends: result });
+              }
           })
-        }));
-        this.setState({ facebookFriends: result });
+        });
       }
+      console.log('getfriendslist');
     } 
   }
 

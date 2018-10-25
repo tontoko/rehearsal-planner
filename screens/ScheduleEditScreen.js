@@ -44,15 +44,6 @@ export default class ScheduleEditScreen extends React.Component {
 		currentUser = firebase.auth().currentUser;
 	}
 
-	ifChecked(filterId) {
-		const filtered = this.state.participants.filter(n => n.id == filterId);
-		if (filtered.length == 0) {
-			return false;
-		} else {
-			return true;
-		}
-	}
-
 	replaceAll(str, before, after) {
 		return str.split(before).join(after);
 	}
