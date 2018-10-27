@@ -6,8 +6,12 @@ import { bindActionCreators } from 'redux';
 import { StatusBar, Dimensions } from 'react-native';
 import * as firebase from 'firebase';
 import { NavigationActions, StackActions } from 'react-navigation';
+import ENV from '../env.json';
 
 let db;
+const settings = {
+
+}
 
 export default class LoginScreen extends React.Component {
 	constructor(props) {
@@ -45,7 +49,7 @@ export default class LoginScreen extends React.Component {
 
 	async facebookLogin() {
 		const { type, token } = await Expo.Facebook.logInWithReadPermissionsAsync(
-			'496025710872464',
+			ENV.FACEBOOK_APP_ID,
 			{ permissions: ['public_profile', 'email', 'user_friends'] }
 		)
 		.catch((error) => {
@@ -69,8 +73,8 @@ export default class LoginScreen extends React.Component {
 
 	async googleLogin() {
 		const result = await Expo.Google.logInAsync({
-			androidClientId: '460431429680-tpbn5maqhjhbgb8dhrnad6l4uig460mq.apps.googleusercontent.com',
-			iosClientId: '460431429680-iacbej0tutia28puftcvqgos3pv1go2h.apps.googleusercontent.com',
+			androidClientId: ENV.GOOGLE_ANDROID_CLIENT_ID,
+			iosClientId: ENV.GOOGLE_IOS_CLIENT_ID,
 			scopes: ['profile', 'email'],
 		});
 
