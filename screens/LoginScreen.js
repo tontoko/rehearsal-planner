@@ -134,17 +134,17 @@ export default class LoginScreen extends React.Component {
 						db.collection('users').doc(user.uid).set({
 							id: user.uid,
 							email: user.email,
-							image: user.photoURL,
+							image: '',
 							name: user.displayName,
 						})
 							.then(() => {
-								this.props.screenProps.newLogin();
+								this.props.navigation.navigate('DisplayNameSettingScreen', { id: user.uid });
 							})
 					}
 				} else {
 					// ユーザー情報を記録
 					if (token && provider == 'facebook.com') {
-						db.collection('users').doc(targetUser.id).set({
+						db.collection('users').doc(targetUser.data().id).update({
 							id: user.uid,
 							email: user.email,
 							image: user.photoURL,
@@ -156,7 +156,7 @@ export default class LoginScreen extends React.Component {
 								this.props.screenProps.newLogin();
 							})
 					} else if (token) {
-						db.collection('users').doc(targetUser.id).set({
+						db.collection('users').doc(targetUser.data().id).update({
 							id: user.uid,
 							email: user.email,
 							image: user.photoURL,
@@ -167,14 +167,18 @@ export default class LoginScreen extends React.Component {
 								this.props.screenProps.newLogin();
 							})
 					} else {
-						db.collection('users').doc(targetUser.id).set({
+						db.collection('users').doc(targetUser.data().id).update({
 							id: user.uid,
 							email: user.email,
 							image: user.photoURL,
-							name: targetUser.name,
+							name: targetUser.data().name,
 						})
 							.then(() => {
-								this.props.screenProps.newLogin();
+								if (targetUser.data().registered) {
+									this.props.screenProps.newLogin();
+								} else {
+									this.props.navigation.navigate('DisplayNameSettingScreen', { id: targetUser.data().id });
+								}
 							})
 					}
 				}

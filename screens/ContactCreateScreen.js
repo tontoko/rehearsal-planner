@@ -15,11 +15,11 @@ export default class ContactCreateScreen extends React.Component {
 			name: '',
 			email: '',
 			userList: [],
+			ifExist: true,
 		};
 	}
 
 	componentWillMount() {
-
 		db = firebase.firestore();
 		const settings = { timestampsInSnapshots: true };
 		db.settings(settings);
@@ -47,21 +47,17 @@ export default class ContactCreateScreen extends React.Component {
 			db.collection('users').where('email', '==', this.state.email)
 				.get()
 				.then((snapShot) => {
-					let docs = [];
-					snapShot.forEach(doc => {
-						docs.push(doc.data());
-					});
-					if (docs.length <= 0) {
+					if (snapShot.docs.length == 0) {
 						if (this.state.name) {
-							console.log('test1')
 							this.addNewUser();
 						} else {
-							console.log('test2')
+							this.setState({ ifExist: false });
 							alert('このユーザーは登録されていないため、名前を入力してください');
 						}
 					} else {
-						console.log('test3')
-						this.addContact(docs[0].email);
+						this.setState({ ifExist: true });
+						const { email, name, image } = snapShot.docs[0].data();
+						this.addContact(email, name, image);
 					}
 				});
 		} else {
@@ -73,22 +69,29 @@ export default class ContactCreateScreen extends React.Component {
 		db.collection('users').add({
 			name: this.state.name,
 			email: this.state.email,
+			registered: false,
+			image: '',
 		})
 			.then(() => {
-				this.addContact(this.state.email);
+				this.addContact(this.state.email, name, '');
 			})
 			.catch((error) => {
 				alert(error);
 			});
 	}
 
-	addContact(targetEmail) {
+	addContact(email, name, image) {
 		db.collection('contacts').add({
 			[this.replaceAll(currentUser.email, '.', '%2E')]: true,
-			[this.replaceAll(targetEmail,'.', '%2E')]: true,
+			[this.replaceAll(email,'.', '%2E')]: true,
 		})
 			.then(() => {
-				this.props.navigation.goBack();
+				const navigateTo = this.props.navigation.getParam('navigateTo', '');
+				if (navigateTo == 'ContactListScreen') {
+					this.props.navigation.goBack();
+				} else {
+					this.props.navigation.navigate(navigateTo, { newContact: {email, name, image}, type: 'newUser' });
+				}
 			})
 			.catch((error) => {
 				alert(error);
@@ -100,6 +103,17 @@ export default class ContactCreateScreen extends React.Component {
 	}
 
 	render() {
+		const nameInput = () => {
+			if (!this.state.ifExist) {
+				return (
+					<Item floatingLabel style={{ marginBottom: '1%' }}>
+						<Label style={{ paddingTop: '1%', fontSize: 14 }}>名前</Label>
+						<Input onChangeText={(text) => this.setState({ name: text })} value={this.state.name} />
+					</Item>
+				);
+			}
+		};
+
 		return (
 			<Container style={{ paddingTop: StatusBar.currentHeight ? StatusBar.currentHeight : 0 }}>
 				<Header>
@@ -114,10 +128,7 @@ export default class ContactCreateScreen extends React.Component {
 				<Content>
 					<Form style={{ marginVertical: '10%', marginHorizontal: '5%' }}>
 						<List>
-							<Item floatingLabel>
-								<Label style={{ paddingTop: '1%', fontSize: 14 }}>名前</Label>
-								<Input onChangeText={(text) => this.setState({ name: text })} value={this.state.name} />
-							</Item>
+							{nameInput()}
 							<Item floatingLabel>
 								<Label style={{ paddingTop: '1%', fontSize: 14 }}>メールアドレス</Label>
 								<Input keyboardType="email-address"

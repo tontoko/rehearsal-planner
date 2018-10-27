@@ -1,6 +1,6 @@
 import React from 'react';
 import { StatusBar, ListView } from 'react-native';
-import { Content, Header, Left, Right, Icon, Container, Button, Body, Title, Text, List, Form, Item, ListItem, Label, View, Input, CheckBox, Fab } from 'native-base';
+import { Content, Header, Left, Right, Icon, Container, Button, Body, Title, Text, List, Form, Item, ListItem, Label, View, Input, CheckBox, Fab, Thumbnail } from 'native-base';
 import DatePicker from 'react-native-datepicker';
 import moment from 'moment';
 import * as firebase from 'firebase';
@@ -15,9 +15,7 @@ export default class ScheduleCreateScreen extends React.Component {
 		this.state = {
 			title: '',
 			location: '',
-			addName: '',
 			date: null,
-			newUser: [],
 			contacts: [],
 			selected: [],
 		};
@@ -30,6 +28,8 @@ export default class ScheduleCreateScreen extends React.Component {
 				if (this.props.navigation.getParam('type') == 'selected') {
 					const selected = this.props.navigation.getParam('selected', []);
 					this.setState({selected});
+				} else if (this.props.navigation.getParam('type') == 'newUser') {
+					this.setState({selected: [...this.state.selected, this.props.navigation.getParam('newContact', '')]})
 				}
 			}
 		);
@@ -40,56 +40,15 @@ export default class ScheduleCreateScreen extends React.Component {
 
 		// currentUser取得
 		currentUser = firebase.auth().currentUser;
-
-		// アドレス帳リスト取得
-		db.collection('contacts').where(currentUser.uid, '==', true)
-			.get()
-			.then((snapShot) => {
-				snapShot.forEach((doc) => {
-					const docData = doc.data();
-					Object.keys(docData).forEach((userId) => {
-						if (userId !== this.currentUser.uid) {
-							this.db.collection('users').doc(userId)
-								.get()
-								.then((userDoc) => {
-									this.setState({ contacts: [...this.state.contacts, userDoc.data()] });
-								});
-						}
-					});
-				});
-			});
 	}
 
 	async createNewSchedule() {
-		let checkNewUser = 0;
-		await this.state.newUser.forEach(async e => {
-			if (!e.email || !e.name) { 
-				checkNewUser ++; 
-			} else if (!e.email.match(/.+@.+\..+/)) {
-				alert('メールアドレスの形式が正しくありません');
-				return false;
-			}
-		})
-		if (this.state.title && this.state.location && this.state.date && checkNewUser == 0) {
-			let participants = [{ id: currentUser.uid, name: currentUser.displayName, email: currentUser.email }, ...this.state.selected, ...this.state.newUser];
+		if (this.state.title && this.state.location && this.state.date) {
+			let participants = [{ name: currentUser.displayName, email: currentUser.email, image: currentUser.photoURL }, ...this.state.selected ];
 			// データベース検索用のidリスト
 			let list = {};
-			await Promise.all(participants.map(async (user, i) => {
-				if (!user.id) {
-					await db.collection('users').add({
-						name: user.name,
-						email: user.email,
-					})
-					.then(newUser => {
-						list = { ...list, [this.replaceAll(user.email, '.', '%2E')]: true };
-						participants[i].id = newUser.id;
-						db.collection('users').doc(newUser.id).update({
-							id: newUser.id,
-						})
-					})
-				} else {
-					list = { ...list, [this.replaceAll(user.email, '.', '%2E')]: true };
-				}
+			await Promise.all(participants.map(async user => {
+				list = { ...list, [this.replaceAll(user.email, '.', '%2E')]: true };
 			}));
 			db.collection('schedules').add({
 				title: this.state.title,
@@ -113,56 +72,59 @@ export default class ScheduleCreateScreen extends React.Component {
 		return str.split(before).join(after);
 	}
     
-	newUser() {
-		let newUser = [];
-		for (let index = 0; index < this.state.newUser.length; index++) {
-			newUser.push((
-				<ListItem key={index}>
-					<Body>
-						<Item floatingLabel>
-							<Label style={{ paddingTop: '1%', fontSize: 14 }}>名前</Label>
-							<Input 
-								onChangeText={(text) => {
-									let newUser = this.state.newUser;
-									newUser[index].name = text;
-									this.setState({ newUser });
-								}}
-								value={this.state.newUser[index].name} />
-						</Item>
-						<Item floatingLabel>
-							<Label style={{ paddingTop: '1%', fontSize: 14 }}>メールアドレス</Label>
-							<Input 
-								keyboardType="email-address"
-								autoCorrect={false}
-								autoCapitalize="none" 
-								onChangeText={(text) => {
-									let newUser = this.state.newUser;
-									newUser[index].email = text;
-									this.setState({ newUser });
-								}}
-								value={this.state.newUser[index].email} />
-						</Item>
-					</Body>
-					<Button
-						onPress={() => {
-							const newUser = this.state.newUser.filter((n, i) => i !== index);
-							this.setState({ newUser });
-						}}
-						transparent
-					>
-						<Icon name="close" />
-					</Button>
-				</ListItem>
-			));
-		}
-		return newUser;
-	}
+	// newUser() {
+	// 	let newUser = [];
+	// 	for (let index = 0; index < this.state.newUser.length; index++) {
+	// 		newUser.push((
+	// 			<ListItem key={index}>
+	// 				<Body>
+	// 					<Item floatingLabel>
+	// 						<Label style={{ paddingTop: '1%', fontSize: 14 }}>名前</Label>
+	// 						<Input 
+	// 							onChangeText={(text) => {
+	// 								let newUser = this.state.newUser;
+	// 								newUser[index].name = text;
+	// 								this.setState({ newUser });
+	// 							}}
+	// 							value={this.state.newUser[index].name} />
+	// 					</Item>
+	// 					<Item floatingLabel>
+	// 						<Label style={{ paddingTop: '1%', fontSize: 14 }}>メールアドレス</Label>
+	// 						<Input 
+	// 							keyboardType="email-address"
+	// 							autoCorrect={false}
+	// 							autoCapitalize="none" 
+	// 							onChangeText={(text) => {
+	// 								let newUser = this.state.newUser;
+	// 								newUser[index].email = text;
+	// 								this.setState({ newUser });
+	// 							}}
+	// 							value={this.state.newUser[index].email} />
+	// 					</Item>
+	// 				</Body>
+	// 				<Button
+	// 					onPress={() => {
+	// 						const newUser = this.state.newUser.filter((n, i) => i !== index);
+	// 						this.setState({ newUser });
+	// 					}}
+	// 					transparent
+	// 				>
+	// 					<Icon name="close" />
+	// 				</Button>
+	// 			</ListItem>
+	// 		));
+	// 	}
+	// 	return newUser;
+	// }
     
 	renderSelectedUser() {
 		let list = [];
-		this.state.selected.forEach(e => {
+		this.state.selected.forEach((e, i) => {
 			list.push(
-				<ListItem key={e.id}>
+				<ListItem key={i} avatar>
+					<Left>
+						<Thumbnail small source={{ uri: e.image ? e.image : 'https://firebasestorage.googleapis.com/v0/b/rehearsalplanner-f7b28.appspot.com/o/%E3%83%87%E3%83%95%E3%82%A9%E3%83%AB%E3%83%88%E3%82%A2%E3%82%A4%E3%82%B3%E3%83%B3.png?alt=media&token=70a6f7fd-a9b0-4790-a4a8-58c3d94823c3' }} />
+					</Left>
 					<Body>
 						<Text>{e.name}</Text>
 					</Body>
@@ -227,28 +189,19 @@ export default class ScheduleCreateScreen extends React.Component {
 								}}
 								onDateChange={(date) => { this.setState({ date: date }); }}
 							/>
-							<ListItem itemHeader>
-								<Body>
-									<Item floatingLabel>
-										<Label style={{ paddingTop: '1%', fontSize: 14 }}>参加者を追加</Label>
-										<Input onChangeText={(text) => this.setState({ addName: text })} value={this.state.addName} />
-									</Item>
-									<Button transparent onPress={ () => {
-										if (this.state.addName) {
-											this.setState({ newUser: [...this.state.newUser, { name: this.state.addName, email: '' }] });
-											this.setState({addName: ''});
-										}
-									}} 
-									style={{ position: 'absolute', right: 0, bottom: 0 }}>
-										<Icon name="add" />
-									</Button>
-								</Body>
+							<ListItem itemHeader style={{ flex: 1, justifyContent: 'space-around' }}>
+								<Button onPress={() => this.props.navigation.navigate('ContactCreateScreen', { navigateTo: 'ScheduleCreateScreen' })}>
+									<Text>連絡先を追加</Text>
+								</Button>
+								<Text>or</Text>
 								<Button onPress={() => this.props.navigation.navigate('AdressListScreen', { users: this.state.contacts, selected: this.state.selected, type: 'create'})}>
 									<Text>アドレス帳</Text>
 								</Button>
 							</ListItem>
-							{this.newUser()}
-							<ListItem>
+							<ListItem avatar>
+								<Left>
+									<Thumbnail small source={{ uri: currentUser.photoURL ? currentUser.photoURL : 'https://firebasestorage.googleapis.com/v0/b/rehearsalplanner-f7b28.appspot.com/o/%E3%83%87%E3%83%95%E3%82%A9%E3%83%AB%E3%83%88%E3%82%A2%E3%82%A4%E3%82%B3%E3%83%B3.png?alt=media&token=70a6f7fd-a9b0-4790-a4a8-58c3d94823c3' }} />
+								</Left>
 								<Body>
 									<Text>{currentUser.displayName}</Text>
 								</Body>

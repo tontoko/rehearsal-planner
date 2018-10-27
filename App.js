@@ -32,6 +32,7 @@ firebase.initializeApp(config);
 export default class App extends React.Component {
   constructor() {
     super();
+    // newLoginはログイン時に画面遷移する前に処理を行わせるためのstate
     this.state = {
       loading: true,
       fontLoaded: false,
@@ -80,16 +81,12 @@ export default class App extends React.Component {
           .get()
           .then(snapShot => {
               result.push(snapShot.docs[0].data());
-              console.log(i)
-              console.log(datas.data.length)
               if (datas.data.length >= i++) {
-                console.log(result);
                 this.setState({ facebookFriends: result });
               }
           })
         });
       }
-      console.log('getfriendslist');
     } 
   }
 
@@ -98,7 +95,7 @@ export default class App extends React.Component {
   }
 
   updateDisplayName() {
-    this.setState({ user: firebase.auth().currentUser});
+    this.setState({ user: firebase.auth().currentUser, newLogin: false });
   }
 
   render() {
@@ -112,7 +109,7 @@ export default class App extends React.Component {
           return <DisplayNameSettingScreen screenProps={{ updateDisplayName: () => this.updateDisplayName() }} />
         }
       } else {
-        return <LoginStackNavigator screenProps={{ newLogin: () => this.newLogin() }}/>
+        return <LoginStackNavigator screenProps={{ newLogin: () => this.newLogin(), updateDisplayName: () => this.updateDisplayName() }}/>
       }
     } else {
       return <LoadingScreen />

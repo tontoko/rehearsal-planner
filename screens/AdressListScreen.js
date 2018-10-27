@@ -51,7 +51,8 @@ export default class AdressListScreen extends React.Component {
 									.get()
 									.then((userDocs) => {
 										userDocs.forEach(userDoc => {
-											this.setState({ listData: [...this.state.listData, { ...userDoc.data(), id: doc.id }] });
+											const { name, image, email } = userDoc.data();
+											this.setState({ listData: [...this.state.listData, { name, image, email }] });
 										})
 										if (this.state.listData.length >= i + 1) {
 											this.setState({ loading: false });
@@ -78,7 +79,7 @@ export default class AdressListScreen extends React.Component {
 	}
 
 	checkBox(user) {
-		const result = this.state.participants.filter(e => e.id == user.id)
+		const result = this.state.participants.filter(e => e.email == user.email)
 		if (result.length > 0 ) {
 			return
 		} else {
@@ -89,7 +90,7 @@ export default class AdressListScreen extends React.Component {
 							const added = [...this.state.selected, user];
 							this.setState({ selected: added });
 						} else {
-							const deleted = this.state.selected.filter(n => n.id !== user.id);
+							const deleted = this.state.selected.filter(n => n.email !== user.email);
 							this.setState({ selected: deleted });
 						}
 					}}
@@ -102,11 +103,11 @@ export default class AdressListScreen extends React.Component {
 	render() {
 		if (!this.state.loading) {
 			let list = [];
-			this.state.listData.forEach(e => {
+			this.state.listData.forEach((e, i) => {
 				list.push((
-					<ListItem thumbnail key={e.id}>
+					<ListItem thumbnail key={i}>
 						<Left>
-							<Thumbnail square source={{ uri: e.image }} />
+							<Thumbnail small source={{ uri: e.image ? e.image : 'https://firebasestorage.googleapis.com/v0/b/rehearsalplanner-f7b28.appspot.com/o/%E3%83%87%E3%83%95%E3%82%A9%E3%83%AB%E3%83%88%E3%82%A2%E3%82%A4%E3%82%B3%E3%83%B3.png?alt=media&token=70a6f7fd-a9b0-4790-a4a8-58c3d94823c3' }} />
 						</Left>
 						<Body>
 							<Text>{e.name}</Text>

@@ -1,7 +1,7 @@
 import React from 'react';
 import { StatusBar, ListView, Alert } from 'react-native';
 import { Content, Header, Left, Right, Icon, Container, Button, Body, Title, Text, List, Separator, ListItem, Fab, View } from 'native-base';
-import LoadingScreen from './LoadingScreen'
+import LoadingScreen from './LoadingScreen';
 import moment from 'moment';
 import * as firebase from 'firebase';
 
@@ -24,12 +24,19 @@ export default class ScheduleListScreen extends React.Component {
 	componentWillMount() {
 		db.collection('schedules').where(this.replaceAll(currentUser.email, '.', '%2E'), '==', true)
 			.onSnapshot((snapShot) => {
-				let schedules = [];
-				snapShot.forEach(doc => {
-					const docData = doc.data();
-					schedules.push({ ...docData, id: doc.id });
-				});
-				this.setState({ schedules, loading: false });
+				if (snapShot.empty) {
+					this.setState({ loading: false });
+				} else {
+					this.setState({ schedules: [], loading: true });
+					snapShot.docs.forEach((doc, i) => {
+						const docData = doc.data();
+						if (snapShot.docs.length <= i+1) {
+							this.setState({ schedules: [...this.state.schedules, { ...docData, id: doc.id }], loading: false });
+						} else {
+							this.setState({ schedules: [...this.state.schedules, { ...docData, id: doc.id }] });
+						}
+					});
+				}
 			});
 	}
 
@@ -37,18 +44,37 @@ export default class ScheduleListScreen extends React.Component {
 		return str.split(before).join(after);
 	}
 
-	deleteRow(data, secId, rowId, rowMap) {
+	async deleteRow(data, secId, rowId, rowMap) {
+		this.setState({loading: true});
 		rowMap[`${secId}${rowId}`].props.closeRow();
 		db.collection('schedules').doc(data.id)
 			.delete()
+			.then(async () => {
+				const schedules = await this.state.schedules.filter(e => e.id !== data.id);
+				this.setState({ schedules, loading: false });
+			})
 			.catch(error => {
 				alert(error);
+				this.setState({ loading: false });
 			});
 	}
 
 	render() {
 		if (this.state.loading) {
-			return (<LoadingScreen />);
+			return (
+				<Container style={{ paddingTop: StatusBar.currentHeight ? StatusBar.currentHeight : 0 }}>
+					<Header>
+						<Left>
+							<Icon name="menu" onPress={() => { this.props.navigation.openDrawer(); }
+							} />
+						</Left>
+						<Body>
+							<Title>スケジュール</Title>
+						</Body>
+					</Header>
+					<LoadingScreen />
+				</Container>
+			);
 		} else {
 			return (
 				<Container style={{ paddingTop: StatusBar.currentHeight ? StatusBar.currentHeight : 0 }}>

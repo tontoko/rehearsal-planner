@@ -1,6 +1,6 @@
 import React from 'react';
 import { StatusBar, ListView, Alert } from 'react-native';
-import { Content, Header, Left, Right, Icon, Container, Button, Body, Title, Text, List, Separator, ListItem, Fab, View } from 'native-base';
+import { Content, Header, Left, Right, Icon, Container, Button, Body, Title, Text, List, Separator, ListItem, Fab, View, Thumbnail } from 'native-base';
 import LoadingScreen from './LoadingScreen';
 import moment from 'moment';
 import * as firebase from 'firebase';
@@ -28,13 +28,12 @@ export default class ContactListScreen extends React.Component {
 
 	componentWillMount() {
 		db.collection('contacts').where(this.replaceAll(currentUser.email, '.', '%2E'), '==', true)
-			.get()
-			.then((snapShot) => {
-				this.setState({ contacts: [] });
+			.onSnapshot((snapShot) => {
+				this.setState({ contacts: [], loading: true });
 				if (snapShot.empty) {
 					this.setState({ loading: false });
 				} else {
-					snapShot.forEach(doc => {
+					snapShot.docs.forEach((doc, i) => {
 						const docData = Object.keys(doc.data());
 						// const result = await docData.filter(e => currentUser.email);
 						docData.forEach((userEmail) => {
@@ -43,9 +42,11 @@ export default class ContactListScreen extends React.Component {
 								db.collection('users').where('email', '==', replacedEmail)
 									.get()
 									.then((userDocs) => {
-										userDocs.forEach(userDoc => {
-											this.setState({ contacts: [...this.state.contacts, { ...userDoc.data(), id: doc.id }], loading: false });
-										});
+										if (snapShot.docs.length <= i+1) {
+											this.setState({ contacts: [...this.state.contacts, { ...userDocs.docs[0].data(), id: doc.id }], loading: false });
+										} else {
+											this.setState({ contacts: [...this.state.contacts, { ...userDocs.docs[0].data(), id: doc.id }]});
+										}
 									});
 							}
 						});
@@ -69,7 +70,20 @@ export default class ContactListScreen extends React.Component {
 
 	render() {
 		if (this.state.loading) {
-			return (<LoadingScreen />);
+			return (
+				<Container style={{ paddingTop: StatusBar.currentHeight ? StatusBar.currentHeight : 0 }}>
+					<Header>
+						<Left>
+							<Icon name="menu" onPress={() => { this.props.navigation.openDrawer(); }
+							} />
+						</Left>
+						<Body>
+							<Title>コンタクト</Title>
+						</Body>
+					</Header>
+					<LoadingScreen />
+				</Container>
+			);
 		} else {
 			return (
 				<Container style={{ paddingTop: StatusBar.currentHeight ? StatusBar.currentHeight : 0 }}>
@@ -89,7 +103,10 @@ export default class ContactListScreen extends React.Component {
 								rightOpenValue={-75}
 								dataSource={this.ds.cloneWithRows(this.state.contacts)}
 								renderRow={data =>
-									<ListItem>
+									<ListItem avatar>
+										<Left>
+											<Thumbnail small style={{ marginLeft: '5%' }} source={{ uri: data.image ? data.image : 'https://firebasestorage.googleapis.com/v0/b/rehearsalplanner-f7b28.appspot.com/o/%E3%83%87%E3%83%95%E3%82%A9%E3%83%AB%E3%83%88%E3%82%A2%E3%82%A4%E3%82%B3%E3%83%B3.png?alt=media&token=70a6f7fd-a9b0-4790-a4a8-58c3d94823c3' }} />
+										</Left>
 										<Body>
 											<Text>{data.name}</Text>
 											<Text note>{data.email}</Text>
@@ -110,7 +127,7 @@ export default class ContactListScreen extends React.Component {
 							containerStyle={{}}
 							style={{ backgroundColor: '#5067FF' }}
 							position="bottomRight"
-							onPress={() => this.props.navigation.navigate('ContactCreateScreen')}
+							onPress={() => this.props.navigation.navigate('ContactCreateScreen', { navigateTo: 'ContactListScreen' })}
 						>
 							<Icon name="create" />
 						</Fab>

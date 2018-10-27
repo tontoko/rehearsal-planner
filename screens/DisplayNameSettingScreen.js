@@ -6,6 +6,8 @@ import { bindActionCreators } from 'redux';
 import { StatusBar, Dimensions } from 'react-native';
 import * as firebase from 'firebase';
 
+let db, currentUser;
+
 export default class DisplayNameSettingScreen extends React.Component {
 	constructor(props) {
 		super(props);
@@ -15,6 +17,10 @@ export default class DisplayNameSettingScreen extends React.Component {
 			height: Dimensions.get('window').height,
 		};
 		this.onLayout = this.onLayout.bind(this);
+		currentUser = firebase.auth().currentUser;
+		db = firebase.firestore();
+		const settings = { timestampsInSnapshots: true };
+		db.settings(settings);
     }
     
     onLayout() {
@@ -26,13 +32,17 @@ export default class DisplayNameSettingScreen extends React.Component {
     }
 
     async submit() {
-        let user = firebase.auth().currentUser;
-
         await user.updateProfile({
             displayName: this.state.name,
 		})
 		.then(() => {
-			this.props.screenProps.updateDisplayName();
+			db.collection('users').doc(this.props.navigation.getParam('id', '')).update({
+				name: this.state.name,
+				registered: true,
+			})
+				.then(() => {
+					this.props.screenProps.updateDisplayName();
+				})
 		})
 		.catch((error) => {
 			alert(error);
