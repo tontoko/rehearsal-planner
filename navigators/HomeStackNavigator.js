@@ -8,13 +8,13 @@ import React from 'react';
 import { Text } from 'react-native';
 
 export default HomeStackNavigator = createStackNavigator({
-    ScheduleListScreen: ScheduleListScreen,
-    ScheduleCreateScreen: ScheduleCreateScreen,
-    ScheduleEditScreen: ScheduleEditScreen,
-    AdressListScreen: AdressListScreen,
-    ContactCreateScreen: ContactCreateScreen,
+	ScheduleListScreen: ScheduleListScreen,
+	ScheduleCreateScreen: ScheduleCreateScreen,
+	ScheduleEditScreen: ScheduleEditScreen,
+	AdressListScreen: AdressListScreen,
+	ContactCreateScreen: ContactCreateScreen,
 }, {
-    navigationOptions: {
-        header: null,
-    }
-})
+	navigationOptions: {
+		header: null,
+	}
+});

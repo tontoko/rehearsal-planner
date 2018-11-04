@@ -21,8 +21,8 @@ export default class ScheduleListScreen extends React.Component {
 		db.settings(settings);
 	}
 
-	componentWillMount() {
-		db.collection('schedules').where(this.replaceAll(currentUser.email, '.', '%2E'), '==', true)
+	componentDidMount() {
+		this.unsubscribe = db.collection('schedules').where(this.replaceAll(currentUser.email, '.', '%2E'), '==', true)
 			.onSnapshot((snapShot) => {
 				if (snapShot.empty) {
 					this.setState({ loading: false });
@@ -40,23 +40,26 @@ export default class ScheduleListScreen extends React.Component {
 			});
 	}
 
+	componentWillUnmount() {
+		this.unsubscribe();
+	}
+
 	replaceAll(str, before, after) {
 		return str.split(before).join(after);
 	}
 
 	async deleteRow(data, secId, rowId, rowMap) {
-		this.setState({loading: true});
-		rowMap[`${secId}${rowId}`].props.closeRow();
-		db.collection('schedules').doc(data.id)
-			.delete()
-			.then(async () => {
-				const schedules = await this.state.schedules.filter(e => e.id !== data.id);
-				this.setState({ schedules, loading: false });
-			})
-			.catch(error => {
-				alert(error);
-				this.setState({ loading: false });
-			});
+		Alert.alert('確認', '本当に削除しますか？', [{ text: 'はい', onPress: () => {  
+			db.collection('schedules').doc(data.id)
+				.delete()
+				.then(async () => {
+					const schedules = await this.state.schedules.filter(e => e.id !== data.id);
+					this.setState({ schedules });
+				})
+				.catch(error => {
+					alert(error);
+				});
+		} }, { text: 'キャンセル' }]) 
 	}
 
 	render() {

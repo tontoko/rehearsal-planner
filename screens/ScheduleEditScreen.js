@@ -1,6 +1,6 @@
 import React from 'react';
-import { StatusBar, ListView } from 'react-native';
-import { Content, Header, Left, Right, Icon, Container, Button, Body, Title, Text, List, Form, Item, ListItem, Label, View, Input, CheckBox, Fab, Thumbnail } from 'native-base';
+import { StatusBar, ListView, Dimensions } from 'react-native';
+import { Content, Header, Left, Right, Icon, Container, Button, Body, Title, Text, List, Form, Item, ListItem, Label, View, Input, CheckBox, Fab, Thumbnail, Subtitle } from 'native-base';
 import DatePicker from 'react-native-datepicker';
 import moment from 'moment';
 import * as firebase from 'firebase';
@@ -18,11 +18,18 @@ export default class ScheduleEditScreen extends React.Component {
 			participants,
 			date,
 			id,
+			project: this.props.navigation.getParam('project', null),
 			selected: [],
+			width: Dimensions.get('window').width,
+			height: Dimensions.get('window').height,
 		};
+		this.onLayout = this.onLayout.bind(this);
+		db = firebase.firestore();
+		const settings = { timestampsInSnapshots: true };
+		db.settings(settings);
 	}
 
-	componentWillMount() {
+	componentDidMount() {
 		const willFocusSub = this.props.navigation.addListener(
 			'willFocus',
 			payload => {
@@ -34,10 +41,6 @@ export default class ScheduleEditScreen extends React.Component {
 				}
 			}
 		);
-
-		db = firebase.firestore();
-		const settings = { timestampsInSnapshots: true };
-		db.settings(settings);
 	}
 
 	replaceAll(str, before, after) {
@@ -65,6 +68,14 @@ export default class ScheduleEditScreen extends React.Component {
 		} else {
 			alert('必須項目が入力されていません');
 		}
+	}
+
+	onLayout() {
+		// 端末回転時
+		this.setState({
+			width: Dimensions.get('window').width,
+			height: Dimensions.get('window').height,
+		});
 	}
 
 	// newUser() {
@@ -156,7 +167,7 @@ export default class ScheduleEditScreen extends React.Component {
 
 	render() {
 		return (
-			<Container style={{ paddingTop: StatusBar.currentHeight ? StatusBar.currentHeight : 0 }}>
+			<Container onLayout={this.onLayout} style={{ paddingTop: StatusBar.currentHeight ? StatusBar.currentHeight : 0 }}>
 				<Header>
 					<Left>
 						<Icon name="arrow-back" onPress={() => { this.props.navigation.goBack(); }
@@ -164,10 +175,14 @@ export default class ScheduleEditScreen extends React.Component {
 					</Left>
 					<Body>
 						<Title>{this.state.title}</Title>
+						<Subtitle>{this.state.project ? this.state.project.name : ''}</Subtitle>
 					</Body>
 				</Header>
 				<Content>
-					<Form style={{ marginVertical: '10%', marginHorizontal: '5%' }}>
+					<Form style={{
+						marginVertical: this.state.height >= this.state.width ? '10%' : '5%',
+						marginHorizontal: '5%'
+					}}>
 						<List>
 							<Item floatingLabel>
 								<Label style={{ paddingTop: '1%', fontSize: 14 }}>予定名</Label>
@@ -200,12 +215,12 @@ export default class ScheduleEditScreen extends React.Component {
 								}}
 								onDateChange={(date) => { this.setState({ date: date }); }}
 							/>
-							<ListItem itemHeader style={{ flex: 1, justifyContent: 'space-around' }}>
+							<ListItem itemHeader style={{ flex: 1, justifyContent: 'space-around', marginHorizontal: '3%' }}>
 								<Button onPress={() => this.props.navigation.navigate('ContactCreateScreen', { navigateTo: 'ScheduleEditScreen' })}>
 									<Text>連絡先を追加</Text>
 								</Button>
 								<Text>or</Text>
-								<Button onPress={() => this.props.navigation.navigate('AdressListScreen', { participants: this.state.participants, selected: this.state.selected, type: 'edit' })}>
+								<Button onPress={() => this.props.navigation.navigate('AdressListScreen', { participants: this.state.participants, selected: this.state.selected, navigateTo: 'ScheduleEditScreen' })}>
 									<Text>アドレス帳</Text>
 								</Button>
 							</ListItem>

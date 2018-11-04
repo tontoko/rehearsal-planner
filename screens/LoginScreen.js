@@ -9,9 +9,6 @@ import { NavigationActions, StackActions } from 'react-navigation';
 import ENV from '../env.json';
 
 let db;
-const settings = {
-
-}
 
 export default class LoginScreen extends React.Component {
 	constructor(props) {

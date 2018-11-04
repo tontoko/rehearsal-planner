@@ -17,16 +17,15 @@ export default class ContactCreateScreen extends React.Component {
 			userList: [],
 			ifExist: true,
 		};
-	}
-
-	componentWillMount() {
 		db = firebase.firestore();
 		const settings = { timestampsInSnapshots: true };
 		db.settings(settings);
 
 		// currentUser取得
 		currentUser = firebase.auth().currentUser;
+	}
 
+	componentDidMount() {
 		// ユーザーリスト取得
 		db.collection('users')
 			.get().then((snapShot) => {
@@ -73,7 +72,7 @@ export default class ContactCreateScreen extends React.Component {
 			image: '',
 		})
 			.then(() => {
-				this.addContact(this.state.email, name, '');
+				this.addContact(this.state.email, this.state.name, '');
 			})
 			.catch((error) => {
 				alert(error);

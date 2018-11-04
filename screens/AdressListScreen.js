@@ -16,20 +16,14 @@ export default class AdressListScreen extends React.Component {
 		this.state = {
 			listData: [],
 			loading: true,
-			selected: [],
-			toScreen: '',
-			participants: [],
+			selected: this.props.navigation.getParam('selected', []),
+			toScreen: this.props.navigation.getParam('navigateTo', []),
+			participants: this.props.navigation.getParam('participants', []),
 		};
 	}
 
-	async componentWillMount() {
+	async componentDidMount() {
 		// ユーザーと選択済みリストを取得
-		const selected = this.props.navigation.getParam('selected', []);
-		const type = this.props.navigation.getParam('type', '');
-		this.setState({ selected }); 
-		this.setState({ toScreen: type == 'create' ? 'ScheduleCreateScreen' : 'ScheduleEditScreen' })
-		const participants = this.props.navigation.getParam('participants', []);
-		this.setState({participants});
 		const db = firebase.firestore();
 		const settings = { timestampsInSnapshots: true };
 		currentUser = firebase.auth().currentUser;

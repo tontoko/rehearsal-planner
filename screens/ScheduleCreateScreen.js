@@ -1,6 +1,6 @@
 import React from 'react';
-import { StatusBar, ListView } from 'react-native';
-import { Content, Header, Left, Right, Icon, Container, Button, Body, Title, Text, List, Form, Item, ListItem, Label, View, Input, CheckBox, Fab, Thumbnail } from 'native-base';
+import { StatusBar, ListView, Dimensions } from 'react-native';
+import { Content, Header, Left, Right, Icon, Container, Button, Body, Title, Text, List, Form, Item, ListItem, Label, View, Input, CheckBox, Fab, Thumbnail, Subtitle } from 'native-base';
 import DatePicker from 'react-native-datepicker';
 import moment from 'moment';
 import * as firebase from 'firebase';
@@ -16,12 +16,21 @@ export default class ScheduleCreateScreen extends React.Component {
 			title: '',
 			location: '',
 			date: null,
-			contacts: [],
 			selected: [],
+			project: this.props.navigation.getParam('project', null),
+			width: Dimensions.get('window').width,
+			height: Dimensions.get('window').height,
 		};
+		this.onLayout = this.onLayout.bind(this);
+		db = firebase.firestore();
+		const settings = { timestampsInSnapshots: true };
+		db.settings(settings);
+
+		// currentUser取得
+		currentUser = firebase.auth().currentUser;
 	}
 
-	componentWillMount() {
+	componentDidMount() {
 		const willFocusSub = this.props.navigation.addListener(
 			'willFocus',
 			payload => {
@@ -33,13 +42,6 @@ export default class ScheduleCreateScreen extends React.Component {
 				}
 			}
 		);
-
-		db = firebase.firestore();
-		const settings = { timestampsInSnapshots: true };
-		db.settings(settings);
-
-		// currentUser取得
-		currentUser = firebase.auth().currentUser;
 	}
 
 	async createNewSchedule() {
@@ -55,6 +57,7 @@ export default class ScheduleCreateScreen extends React.Component {
 				location: this.state.location,
 				participants,
 				date: this.state.date,
+				[this.state.project.id]: true,
 				...list,
 			})
 				.then(() => {
@@ -116,6 +119,14 @@ export default class ScheduleCreateScreen extends React.Component {
 	// 	}
 	// 	return newUser;
 	// }
+
+	onLayout() {
+		// 端末回転時
+		this.setState({
+			width: Dimensions.get('window').width,
+			height: Dimensions.get('window').height,
+		});
+	}
     
 	renderSelectedUser() {
 		let list = [];
@@ -145,7 +156,7 @@ export default class ScheduleCreateScreen extends React.Component {
 
 	render() {
 		return (
-			<Container style={{ paddingTop: StatusBar.currentHeight ? StatusBar.currentHeight : 0 }}>
+			<Container onLayout={this.onLayout} style={{ paddingTop: StatusBar.currentHeight ? StatusBar.currentHeight : 0 }}>
 				<Header>
 					<Left>
 						<Icon name="arrow-back" onPress={() => { this.props.navigation.goBack(); }
@@ -153,10 +164,12 @@ export default class ScheduleCreateScreen extends React.Component {
 					</Left>
 					<Body>
 						<Title>新しいスケジュール</Title>
+						<Subtitle>{this.state.project ? this.state.project.name : ''}</Subtitle>
 					</Body>
 				</Header>
 				<Content>
-					<Form style={{ marginVertical: '10%', marginHorizontal: '5%' }}>
+					<Form style={{ marginVertical: this.state.height >= this.state.width ? '10%' : '5%',
+						marginHorizontal: '5%' }}>
 						<List>
 							<Item floatingLabel>
 								<Label style={{ paddingTop: '1%', fontSize: 14 }}>予定名</Label>
@@ -189,12 +202,12 @@ export default class ScheduleCreateScreen extends React.Component {
 								}}
 								onDateChange={(date) => { this.setState({ date: date }); }}
 							/>
-							<ListItem itemHeader style={{ flex: 1, justifyContent: 'space-around' }}>
+							<ListItem itemHeader style={{ flex: 1, justifyContent: 'space-around', marginHorizontal: '3%' }}>
 								<Button onPress={() => this.props.navigation.navigate('ContactCreateScreen', { navigateTo: 'ScheduleCreateScreen' })}>
 									<Text>連絡先を追加</Text>
 								</Button>
 								<Text>or</Text>
-								<Button onPress={() => this.props.navigation.navigate('AdressListScreen', { users: this.state.contacts, selected: this.state.selected, type: 'create'})}>
+								<Button onPress={() => this.props.navigation.navigate('AdressListScreen', { selected: this.state.selected, navigateTo: 'ScheduleCreateScreen'})}>
 									<Text>アドレス帳</Text>
 								</Button>
 							</ListItem>
