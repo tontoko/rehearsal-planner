@@ -80,9 +80,10 @@ export default class App extends React.Component {
           db.collection('users').where('facebookId', '==', data.id)
           .get()
           .then(snapShot => {
-              result.push(snapShot.docs[0].data());
-              if (datas.data.length >= i++) {
-                this.setState({ facebookFriends: result });
+            const {email, image, name} = snapShot.docs[0].data();
+              result = [...result, {email, image, name}]
+              if (datas.data.length == i + 1) {
+                this.setState({ facebookFriends: result});
               }
           })
         });
@@ -103,7 +104,7 @@ export default class App extends React.Component {
       // ログイン状態によって画面遷移
       if (this.state.user !== 'noUser' && !this.state.newLogin) {
         if (this.state.user.displayName) {
-          return <AppDrawerNavigator screenProps={{ facebookFriends: this.facebookFriends }} />
+          return <AppDrawerNavigator screenProps={{ facebookFriends: this.state.facebookFriends }} />
         } else {
           // ユーザー名設定画面
           return <DisplayNameSettingScreen screenProps={{ updateDisplayName: () => this.updateDisplayName() }} />

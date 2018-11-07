@@ -1,6 +1,6 @@
 import React from 'react';
 import { StatusBar, ListView, Alert } from 'react-native';
-import { Content, Header, Left, Right, Icon, Container, Button, Body, Title, Text, List, Separator, ListItem, Fab, View } from 'native-base';
+import { Content, Header, Left, Right, Icon, Container, Button, Body, Title, Text, List, Separator, ListItem, Fab, View, Subtitle } from 'native-base';
 import LoadingScreen from './LoadingScreen';
 import moment from 'moment';
 import * as firebase from 'firebase';
@@ -77,7 +77,8 @@ export default class ProjectScheduleListScreen extends React.Component {
                             } />
                         </Left>
                         <Body>
-                            <Title>{this.state.project.name}</Title>
+                            <Title>スケジュール</Title>
+                            <Subtitle>プロジェクト: {this.state.project ? this.state.project.name : ''}</Subtitle>          
                         </Body>
                     </Header>
                     <LoadingScreen />
@@ -92,7 +93,8 @@ export default class ProjectScheduleListScreen extends React.Component {
                             } />
                         </Left>
                         <Body>
-                            <Title>{this.state.project.name}</Title>
+                            <Title>スケジュール</Title>
+                            <Subtitle>{this.state.project ? 'プロジェクト: ' + this.state.project.name : ''}</Subtitle>                       
                         </Body>
                     </Header>
                     <View style={{ flex: 1 }}>

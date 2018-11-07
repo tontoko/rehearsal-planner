@@ -28,6 +28,7 @@ export default class AdressListScreen extends React.Component {
 		const settings = { timestampsInSnapshots: true };
 		currentUser = firebase.auth().currentUser;
 		db.settings(settings);
+
 		// アドレスリスト取得
 		db.collection('contacts').where(this.replaceAll(currentUser.email, '.', '%2E'), '==', true)
 			.get()
@@ -44,12 +45,22 @@ export default class AdressListScreen extends React.Component {
 								db.collection('users').where('email', '==', replacedEmail)
 									.get()
 									.then((userDocs) => {
-										userDocs.forEach(userDoc => {
-											const { name, image, email } = userDoc.data();
-											this.setState({ listData: [...this.state.listData, { name, image, email }] });
-										})
-										if (this.state.listData.length >= i + 1) {
-											this.setState({ loading: false });
+										const { name, image, email } = userDocs.docs[0].data();
+										this.setState({ listData : [...this.state.listData, { name, image, email }] });
+										if (snapShot.docs.length == i + 1) {
+											// Facebookの友達リストからすでに登録されている連絡先をフィルター
+											if (this.props.screenProps.facebookFriends) {
+												const facebookFriends = this.props.screenProps.facebookFriends;
+												let filteredList = [];
+												this.props.screenProps.facebookFriends.forEach(async (facebook, i) => {
+													filteredList = await this.state.listData.filter(e => e.email != facebook.email);
+													if (facebookFriends.length == i + 1) {
+														this.setState({ listData: [...filteredList, ...facebookFriends], loading: false });
+													}
+												})
+											} else {
+												this.setState({ loading: false });
+											}
 										}
 									});
 								}

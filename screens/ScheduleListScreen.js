@@ -106,6 +106,7 @@ export default class ScheduleListScreen extends React.Component {
 											date: data.date, 
 											participants: data.participants,
 											type: 'edit',
+											projectName: data.projectName,
 										}
 									)}>
 										<Body>

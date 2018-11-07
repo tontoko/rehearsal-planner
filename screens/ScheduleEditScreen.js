@@ -19,6 +19,7 @@ export default class ScheduleEditScreen extends React.Component {
 			date,
 			id,
 			project: this.props.navigation.getParam('project', null),
+			projectName: this.props.navigation.getParam('projectName', null),
 			selected: [],
 			width: Dimensions.get('window').width,
 			height: Dimensions.get('window').height,
@@ -37,7 +38,7 @@ export default class ScheduleEditScreen extends React.Component {
 					const selected = this.props.navigation.getParam('selected', []);
 					this.setState({ selected });
 				} else if (this.props.navigation.getParam('type') == 'newUser') {
-					this.setState({ selected: [...this.state.selected, this.state.navigation.getParam('newContact', '')] })
+					this.setState({ selected: [...this.state.selected, this.props.navigation.getParam('newContact', '')] })
 				}
 			}
 		);
@@ -166,6 +167,15 @@ export default class ScheduleEditScreen extends React.Component {
 	}
 
 	render() {
+		const projectName = () => {
+			if (this.state.project) {
+				return 'プロジェクト: ' + this.state.project.name
+			} else if (this.state.projectName) {
+				return 'プロジェクト: ' + this.state.projectName
+			} else {
+				return ''
+			}
+		}
 		return (
 			<Container onLayout={this.onLayout} style={{ paddingTop: StatusBar.currentHeight ? StatusBar.currentHeight : 0 }}>
 				<Header>
@@ -175,7 +185,7 @@ export default class ScheduleEditScreen extends React.Component {
 					</Left>
 					<Body>
 						<Title>{this.state.title}</Title>
-						<Subtitle>{this.state.project ? this.state.project.name : ''}</Subtitle>
+						<Subtitle>{projectName()}</Subtitle>
 					</Body>
 				</Header>
 				<Content>

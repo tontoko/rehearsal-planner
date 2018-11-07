@@ -52,21 +52,39 @@ export default class ScheduleCreateScreen extends React.Component {
 			await Promise.all(participants.map(async user => {
 				list = { ...list, [this.replaceAll(user.email, '.', '%2E')]: true };
 			}));
-			db.collection('schedules').add({
-				title: this.state.title,
-				location: this.state.location,
-				participants,
-				date: this.state.date,
-				[this.state.project.id]: true,
-				...list,
-			})
+			if (this.state.project) {
+				db.collection('schedules').add({
+					title: this.state.title,
+					location: this.state.location,
+					participants,
+					date: this.state.date,
+					[this.state.project.id]: true,
+					projectName: this.state.project.name,
+					...list,
+				})
+					.then(() => {
+						this.props.navigation.goBack();
+					})
+					.catch((error) => {
+						alert(error);
+					});
+			} else {
+				db.collection('schedules').add({
+					title: this.state.title,
+					location: this.state.location,
+					participants,
+					date: this.state.date,
+					projectName: '',
+					...list,
+				})
 				.then(() => {
 					this.props.navigation.goBack();
 				})
-				.catch((error) => {
-					alert(error);
-				});
-		} else {
+					.catch((error) => {
+						alert(error);
+					});
+				}
+			} else {
 			alert('必須項目が入力されていません');
 		}
 	}
@@ -164,7 +182,7 @@ export default class ScheduleCreateScreen extends React.Component {
 					</Left>
 					<Body>
 						<Title>新しいスケジュール</Title>
-						<Subtitle>{this.state.project ? this.state.project.name : ''}</Subtitle>
+						<Subtitle>{this.state.project ? 'プロジェクト: ' + this.state.project.name : ''}</Subtitle>
 					</Body>
 				</Header>
 				<Content>

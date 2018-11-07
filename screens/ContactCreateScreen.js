@@ -43,20 +43,29 @@ export default class ContactCreateScreen extends React.Component {
 				alert('メールアドレスの形式が正しくありません');
 				return false;
 			}
-			db.collection('users').where('email', '==', this.state.email)
+			db.collection('contacts').where(this.replaceAll(currentUser.email, '.', '%2E'), '==', true)
+				.where(this.replaceAll(this.state.email, '.', '%2E'), '==', true)
 				.get()
 				.then((snapShot) => {
-					if (snapShot.docs.length == 0) {
-						if (this.state.name) {
-							this.addNewUser();
-						} else {
-							this.setState({ ifExist: false });
-							alert('このユーザーは登録されていないため、名前を入力してください');
-						}
+					if (snapShot.docs.length >= 1) {
+						alert('すでに登録されているユーザーです');
 					} else {
-						this.setState({ ifExist: true });
-						const { email, name, image } = snapShot.docs[0].data();
-						this.addContact(email, name, image);
+						db.collection('users').where('email', '==', this.state.email)
+							.get()
+							.then((snapShot) => {
+								if (snapShot.docs.length == 0) {
+									if (this.state.name) {
+										this.addNewUser();
+									} else {
+										this.setState({ ifExist: false });
+										alert('このユーザーは登録されていないため、名前を入力してください');
+									}
+								} else {
+									this.setState({ ifExist: true });
+									const { email, name, image } = snapShot.docs[0].data();
+									this.addContact(email, name, image);
+								}
+							});
 					}
 				});
 		} else {
