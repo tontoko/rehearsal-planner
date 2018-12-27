@@ -118,7 +118,7 @@ export default class ProjectScheduleListScreen extends React.Component {
                                     )}>
                                         <Body>
                                             <Text>{data.title}</Text>
-                                            <Text note>{data.location}</Text>
+                                            <Text note>{data.location.name ? data.location.name : ''}</Text>
                                         </Body>
                                         <Right>
                                             <Text note>{moment(data.date).calendar()}</Text>

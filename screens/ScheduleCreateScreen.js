@@ -1,6 +1,6 @@
 import React from 'react';
 import { StatusBar, ListView, Dimensions } from 'react-native';
-import { Content, Header, Left, Right, Icon, Container, Button, Body, Title, Text, List, Form, Item, ListItem, Label, View, Input, CheckBox, Fab, Thumbnail, Subtitle } from 'native-base';
+import { Content, Header, Left, Right, Icon, Container, Button, Body, Title, Text, List, Form, Item, ListItem, Label, View, Input, CheckBox, Fab, Thumbnail, Subtitle, Picker } from 'native-base';
 import DatePicker from 'react-native-datepicker';
 import moment from 'moment';
 import * as firebase from 'firebase';
@@ -15,6 +15,7 @@ export default class ScheduleCreateScreen extends React.Component {
 		this.state = {
 			title: '',
 			location: '',
+			ifLoaded: false,
 			date: null,
 			selected: [],
 			project: this.props.navigation.getParam('project', null),
@@ -25,6 +26,7 @@ export default class ScheduleCreateScreen extends React.Component {
 		db = firebase.firestore();
 		const settings = { timestampsInSnapshots: true };
 		db.settings(settings);
+		this.locations = [(<Picker.Item label="指定なし" value="null" key="0" />)];
 
 		// currentUser取得
 		currentUser = firebase.auth().currentUser;
@@ -42,10 +44,23 @@ export default class ScheduleCreateScreen extends React.Component {
 				}
 			}
 		);
+		db.collection('users').doc(currentUser.uid).collection('locations')
+			.get()
+			.then((snapShot) => {
+				snapShot.docs.forEach((e, i) => {
+					const data = e.data();
+					if (snapShot.docs.length <= i + 1) {
+						this.locations = [...this.locations, (<Picker.Item label={data.name} value={data} key={i++} />)];
+						this.setState({ ifLoaded: true });
+					} else {
+						this.locations = [...this.locations, (<Picker.Item label={data.name} value={data} key={i++} />)];
+					}
+				})
+			})
 	}
 
 	async createNewSchedule() {
-		if (this.state.title && this.state.location && this.state.date) {
+		if (this.state.title && this.state.date) {
 			let participants = [{ name: currentUser.displayName, email: currentUser.email, image: currentUser.photoURL }, ...this.state.selected ];
 			// データベース検索用のidリスト
 			let list = {};
@@ -172,6 +187,12 @@ export default class ScheduleCreateScreen extends React.Component {
 		return list;
 	}
 
+	onValueChange(value: string) {
+		this.setState({
+			location: value
+		});
+	}
+
 	render() {
 		return (
 			<Container onLayout={this.onLayout} style={{ paddingTop: StatusBar.currentHeight ? StatusBar.currentHeight : 0 }}>
@@ -193,9 +214,16 @@ export default class ScheduleCreateScreen extends React.Component {
 								<Label style={{ paddingTop: '1%', fontSize: 14 }}>予定名</Label>
 								<Input onChangeText={(text) => this.setState({ title: text })} value={this.state.title} />
 							</Item>
-							<Item floatingLabel>
+							<Item>
 								<Label style={{ paddingTop: '1%', fontSize: 14 }}>会場</Label>
-								<Input onChangeText={(text) => this.setState({ location: text })} value={this.state.location} />
+								<Picker
+									mode="dropdown"
+									selectedValue={this.state.location}
+									onValueChange={this.onValueChange.bind(this)}
+									enabled={this.state.ifLoaded}
+								>
+									{this.locations}
+								</Picker>
 							</Item>
 							<DatePicker
 								style={{ width: '100%', marginTop: 20 }}

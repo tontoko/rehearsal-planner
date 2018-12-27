@@ -126,7 +126,7 @@ export default class ProjectEditScreen extends React.Component {
 						<Icon name="arrow-back" onPress={() => { this.props.navigation.goBack(); }} />
 					</Left>
 					<Body>
-						<Title>新しいプロジェクト</Title>
+						<Title>{this.state.name}</Title>
 					</Body>
 				</Header>
 				<Content>
