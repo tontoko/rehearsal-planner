@@ -125,16 +125,32 @@ export default class ProjectScheduleListScreen extends React.Component {
                                         </Right>
                                     </ListItem>}
                                 renderLeftHiddenRow={data =>
-                                    <Button full onPress={() => {
-                                        let participants;
-                                        data.participants.forEach((e, i) => {
-                                            if (i == 0) {
-                                                participants = e.name;
-                                            } else {
-                                                participants += '\n' + e.name;
-                                            }
-                                        });
-                                        Alert.alert('参加者一覧', participants);
+                                    <Button full onPress={async () => {
+                                        let participants, equipments;
+                                        await Promise.all(
+                                            data.participants.map(async (e, i) => {
+                                                if (i == 0) {
+                                                    participants = e.name;
+                                                } else {
+                                                    participants += '\n' + e.name;
+                                                }
+                                            })
+                                        );
+                                        if (data.location.equipments) {
+                                            await Promise.all(
+                                                data.location.equipments.map(async (e, i) => {
+                                                    const { name, number } = e
+                                                    if (i == 0) {
+                                                        equipments = '備品\n' + name + ': ' + number;
+                                                    } else {
+                                                        equipments += '\n' + name + ': ' + number;
+                                                    }
+                                                })
+                                            );
+                                            Alert.alert('参加者一覧', participants + '\n\n' + equipments);
+                                        } else {
+                                            Alert.alert('参加者一覧', participants);
+                                        }
                                     }}>
                                         <Icon active name="information-circle" />
                                     </Button>}

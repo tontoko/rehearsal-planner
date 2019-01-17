@@ -26,7 +26,7 @@ export default class ScheduleCreateScreen extends React.Component {
 		db = firebase.firestore();
 		const settings = { timestampsInSnapshots: true };
 		db.settings(settings);
-		this.locations = [(<Picker.Item label="指定なし" value="null" key="0" />)];
+		this.locations = [(<Picker.Item label="指定なし" value="" key="0" />)];
 
 		// currentUser取得
 		currentUser = firebase.auth().currentUser;
@@ -48,12 +48,16 @@ export default class ScheduleCreateScreen extends React.Component {
 			.get()
 			.then((snapShot) => {
 				snapShot.docs.forEach((e, i) => {
-					const data = e.data();
+					const data = { ...e.data(), id: e.id };
 					if (snapShot.docs.length <= i + 1) {
-						this.locations = [...this.locations, (<Picker.Item label={data.name} value={data} key={i++} />)];
+						if (data.id !== this.state.location.id) {
+							this.locations = [...this.locations, (<Picker.Item label={data.name} value={data} key={i++} />)];							
+						}
 						this.setState({ ifLoaded: true });
 					} else {
-						this.locations = [...this.locations, (<Picker.Item label={data.name} value={data} key={i++} />)];
+						if (data.id !== this.state.location.id) {
+							this.locations = [...this.locations, (<Picker.Item label={data.name} value={data} key={i++} />)];
+						}
 					}
 				})
 			})
@@ -107,52 +111,7 @@ export default class ScheduleCreateScreen extends React.Component {
 	replaceAll(str, before, after) {
 		return str.split(before).join(after);
 	}
-    
-	// newUser() {
-	// 	let newUser = [];
-	// 	for (let index = 0; index < this.state.newUser.length; index++) {
-	// 		newUser.push((
-	// 			<ListItem key={index}>
-	// 				<Body>
-	// 					<Item floatingLabel>
-	// 						<Label style={{ paddingTop: '1%', fontSize: 14 }}>名前</Label>
-	// 						<Input 
-	// 							onChangeText={(text) => {
-	// 								let newUser = this.state.newUser;
-	// 								newUser[index].name = text;
-	// 								this.setState({ newUser });
-	// 							}}
-	// 							value={this.state.newUser[index].name} />
-	// 					</Item>
-	// 					<Item floatingLabel>
-	// 						<Label style={{ paddingTop: '1%', fontSize: 14 }}>メールアドレス</Label>
-	// 						<Input 
-	// 							keyboardType="email-address"
-	// 							autoCorrect={false}
-	// 							autoCapitalize="none" 
-	// 							onChangeText={(text) => {
-	// 								let newUser = this.state.newUser;
-	// 								newUser[index].email = text;
-	// 								this.setState({ newUser });
-	// 							}}
-	// 							value={this.state.newUser[index].email} />
-	// 					</Item>
-	// 				</Body>
-	// 				<Button
-	// 					onPress={() => {
-	// 						const newUser = this.state.newUser.filter((n, i) => i !== index);
-	// 						this.setState({ newUser });
-	// 					}}
-	// 					transparent
-	// 				>
-	// 					<Icon name="close" />
-	// 				</Button>
-	// 			</ListItem>
-	// 		));
-	// 	}
-	// 	return newUser;
-	// }
-
+	
 	onLayout() {
 		// 端末回転時
 		this.setState({

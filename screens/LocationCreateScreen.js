@@ -23,8 +23,12 @@ export default class LocationCreateScreen extends React.Component {
 		currentUser = firebase.auth().currentUser;
 	}
 
-	createNewLocation() {
-		if (this.state.name) {
+	async createNewLocation() {
+		let checkNames = 0;
+		await Promise.all(this.state.equipments.map(async equipment => {
+			if (!equipment.name) { await checkNames++ }
+		}))
+		if (this.state.name && checkNames == 0) {
 			db.collection('users').doc(currentUser.uid).collection('locations').where('name', '==', this.state.name)
 				.get()
 				.then((snapShot) => {

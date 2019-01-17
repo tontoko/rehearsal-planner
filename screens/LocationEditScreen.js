@@ -25,7 +25,12 @@ export default class LocationEditScreen extends React.Component {
 		currentUser = firebase.auth().currentUser;
 	}
 
-	updateLocation() {
+	async updateLocation() {
+		let checkNames = 0;
+		await Promise.all(this.state.equipments.map(async equipment => {
+			if (!equipment.name) { await checkNames++ }
+		}))
+		if (this.state.name && checkNames == 0) {
 		db.collection('users').doc(currentUser.uid).collection('locations').doc(this.state.id).update({
 			equipments: this.state.equipments,
 		})
@@ -35,6 +40,9 @@ export default class LocationEditScreen extends React.Component {
 			.catch((error) => {
 				alert(error);
 			});
+		} else {
+			alert('必須項目が入力されていません');
+		}
 	}
 
 	replaceAll (str, before, after) {
@@ -99,7 +107,7 @@ export default class LocationEditScreen extends React.Component {
 					<Form style={{ marginVertical: '10%', marginHorizontal: '5%' }}>
 						<List>
 							<Item style={{ marginBottom: '2%' }}>
-								<Text>{this.state.name}</Text>
+								<Text style={{ marginBottom: '2%' }}>{this.state.name}</Text>
 							</Item>
 							<Button onPress={() => {
 								this.setState({ equipments: [...this.state.equipments, {name: '', number: '0'}] });
@@ -116,7 +124,7 @@ export default class LocationEditScreen extends React.Component {
 					position="bottomRight"
 					onPress={() => this.updateLocation()}
 				>
-					<Icon name="add" />
+					<Icon name="checkmark" />
 				</Fab>
 			</Container>
 		);

@@ -75,7 +75,7 @@ export default class App extends React.Component {
       let result = [];
       const response = await fetch(`https://graph.facebook.com/me/friends?access_token=${token}`);
       const datas = await response.json();
-      if (datas) {
+      if (datas.data) {
         datas.data.forEach((data, i) => {
           db.collection('users').where('facebookId', '==', data.id)
           .get()

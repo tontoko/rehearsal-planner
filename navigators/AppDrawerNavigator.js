@@ -2,6 +2,7 @@ import HomeStackNavigator from './HomeStackNavigator';
 import ContactStackNavigator from './ContactStackNavigator';
 import ProjectStackNavigator from './ProjectStackNavigator';
 import LocationStackNavigator from './LocationStackNavigator';
+import SettingStackNavigator from './SettingStackNavigator';
 import { createDrawerNavigator, DrawerItems, createStackNavigator } from 'react-navigation';
 import SettingsScreen from '../screens/SettingsScreen';
 import React from 'react';
@@ -51,7 +52,7 @@ export default AppDrawerNavigator = createDrawerNavigator({
 	Project: ProjectStackNavigator,
 	Contact: ContactStackNavigator,
 	Location: LocationStackNavigator,
-	Settings: SettingsScreen,
+	Settings: SettingStackNavigator,
 }, {
 	contentComponent: Drawer,
 });

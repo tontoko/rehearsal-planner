@@ -5,7 +5,7 @@ import React from 'react';
 import { Text } from 'react-native';
 
 
-export default HomeStackNavigator = createStackNavigator({
+export default ContactStackNavigator = createStackNavigator({
     ContactListScreen: ContactListScreen,
     ContactCreateScreen: ContactCreateScreen,
 
